@@ -390,6 +390,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 @keyframes starpop{from{transform:scale(0) rotate(-40deg);opacity:0}}
 .mhead.win h3{animation:winb 1.2s ease-in-out infinite}@keyframes winb{50%{transform:scale(1.06)}}
 .seg{display:flex;gap:4px}.seg button{padding:3px 12px 5px;border-radius:10px;background:#fff;border:2.5px solid var(--edge);font-family:var(--display);font-size:15px;box-shadow:0 2px 0 var(--edge)}.seg button.on{background:linear-gradient(180deg,#ffe07a,#ffc21f)}
+.tcard.aim{background:linear-gradient(180deg,#ffd0c4,#ff8a6a)}
 </style>
 
 </head>
@@ -412,7 +413,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
       <button class="btn y" id="mSet">الإعدادات</button>
     </div>
     <div class="credit">تصميم وتطوير <b>فهد العفاسي</b></div>
-    <div class="ver">نسخة تجريبية 0.5 · رمليث</div>
+    <div class="ver">نسخة تجريبية 0.6 · رمليث</div>
   </section>
 
   <!-- VILLAGE HUD -->
@@ -1306,15 +1307,16 @@ function renderBattleHud(){
   if(B.replay){$('#bEnd').hidden=true;$('#bTroops').innerHTML=`<div class="rpbar"><span class="rp-l">${art('play')} إعادة</span>${[1,2,4].map(v=>`<button class="btn sm ${(B.speed||1)===v?'y':''}" data-spd="${v}">×${v}</button>`).join('')}<button class="btn r sm" id="rpX">خروج</button></div>`;
     $('#bTroops').querySelectorAll('[data-spd]').forEach(e=>e.onclick=()=>{B.speed=+e.dataset.spd;snd('tap');renderBattleHud()});$('#rpX').onclick=()=>{snd('tap');toVillage()};return}$('#bEnd').textContent=def?'استسلم':'إنهاء المعركة';
   const ks=TROOPS.filter(k=>B.init[k]>0);
-  if(B.sel==null||(B.sel!=='h'&&B.sel!=='fz'&&!B.sel.startsWith('s:')&&!B.left[B.sel])||(B.sel==='h'&&B.heroOut)||(B.sel.startsWith('s:')&&!B.sp[B.sel.slice(2)]))B.sel=ks.find(k=>B.left[k]>0)||(!B.heroOut?'h':null);
+  if(B.sel==null||(B.sel!=='h'&&B.sel!=='fz'&&B.sel!=='aim'&&!B.sel.startsWith('s:')&&!B.left[B.sel])||(B.sel==='h'&&B.heroOut)||(B.sel.startsWith('s:')&&!B.sp[B.sel.slice(2)]))B.sel=ks.find(k=>B.left[k]>0)||(!B.heroOut?'h':null);
   const cards=[];
   if(!B.heroOut)cards.push(`<button class="tcard hero ${B.sel==='h'?'on':''}" data-k="h"><span class="n">${S.hero.lvl}</span>${art('v_h')}الفارس</button>`);
   else if(!B.nakhwa&&B.units.some(u=>u.t==='h'&&!u.dead))cards.push(`<button class="tcard ab" data-ab="1">${art('shout')}النخوة</button>`);
+  if(mode==='battle')cards.push(`<button class="tcard aim ${B.sel==='aim'?'on':''}" data-k="aim">${art('swords')}وجّه</button>`);
   if(B.kind!=='defense'&&!B.fzOut&&S.fz.list.length)cards.push(`<button class="tcard fz ${B.sel==='fz'?'on':''}" data-k="fz"><span class="n">${S.fz.list.length}</span>${art('tent')}الفزعة</button>`);
   ks.forEach(k=>cards.push(`<button class="tcard ${B.sel===k?'on':''} ${B.left[k]?'':'zero'}" data-k="${k}"><span class="n">${B.left[k]}</span>${art('v_'+k)}${TR[k].n}</button>`));
   Object.keys(SPL).forEach(k=>{if(B.spInit[k]>0)cards.push(`<button class="tcard sp ${B.sel==='s:'+k?'on':''} ${B.sp[k]?'':'zero'}" data-k="s:${k}"><span class="n">${B.sp[k]}</span>${art(k)}${SPL[k].n}</button>`)});
   $('#bTroops').innerHTML=cards.join('')||'<div class="bcard">ما عندك جنود ولا تعاويذ.</div>';
-  $('#bTroops').querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>{const k=e.dataset.k;if(k.startsWith('s:')&&!B.sp[k.slice(2)])return;if(!k.startsWith('s:')&&k!=='h'&&k!=='fz'&&!B.left[k])return;B.sel=k;snd('tap');renderBattleHud()});
+  $('#bTroops').querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>{const k=e.dataset.k;if(k.startsWith('s:')&&!B.sp[k.slice(2)])return;if(!k.startsWith('s:')&&k!=='h'&&k!=='fz'&&k!=='aim'&&!B.left[k])return;if(k==='aim')toast(B.kind==='defense'?'اضغط على الغازي اللي تبي جيشك يضربه':'اضغط على المبنى اللي تبي جيشك يضربه');B.sel=k;snd('tap');renderBattleHud()});
   const ab=$('#bTroops').querySelector('[data-ab]');if(ab)ab.onclick=nakhwa;
 }
 function updateBattleTop(){const B=BB;if(!B)return;const tt=Math.max(0,B.time),m=Math.floor(tt/60),s=Math.floor(tt%60);
@@ -1396,7 +1398,7 @@ function endBattle(){
   if(B.kind==='defense'){const win=!B.surrender&&!B.destroyedCastle&&B.pct<50;let g,w,tr;
     if(win){g=Math.max(0,Math.min(350*B.L+Math.floor(B.gotG),capG()-S.gold));w=Math.max(0,Math.min(350*B.L,capW()-S.water));S.gold+=g;S.water+=w;tr=ri(8,14);stat('defWins');addXP(30)}
     else{g=-Math.floor(S.gold*.12);w=-Math.floor(S.water*.12);S.gold+=g;S.water+=w;tr=-ri(6,10)}
-    S.tro=Math.max(0,S.tro+tr);snd(win?'win':'lose');musTo(win?'victory':'defeat');
+    S.tro=Math.max(0,S.tro+tr);snd(win?'win':'lose');musTo(win?'victory':'defeat');B.units.forEach(u=>{if(u.dfd&&!u.dead)S.army[u.t]=(S.army[u.t]||0)+1});
     if(B.rec){Object.assign(B.rec,{pct:Math.floor(B.pct),win,lg:Math.max(0,-g),lw:Math.max(0,-w),tr,castle:B.destroyedCastle,seen:true});S.raidLog.unshift(B.rec);S.raidLog=S.raidLog.slice(0,6);S.fz.list=B.units.filter(u=>u.fz&&!u.dead).map(u=>u.t)}
     const sg=v=>'<bdi>'+(v>0?'+':v<0?'-':'')+fmt(Math.abs(v))+'</bdi>';
     openModal(`<div class="mhead ${win?'win':'lose'}"><h3>${win?'صدّيت الغزاة!':'الغزاة اخترقوا قلعتك'}</h3></div><div class="mi">${art(win?'shield':'swords')}</div>
@@ -2023,9 +2025,9 @@ function fightUnit(u,f,dt,rg){const B=BB;const T=TR[u.t];const d=Math.hypot(f.x-
   u.moving=false;u.cd-=dt*(rg?1.4:1);if(u.cd>0)return;u.cd=u.t==='h'?.8:1;const dm=(u.dmg||T.dmg)*(rg?1.6:1);
   if(T.range>=2){B.proj.push({k:'arrow',x:u.x,y:u.y,u:f,t:0,dur:.3,dmg:dm});snd('shot')}else{damageU(f,dm);fx.push({k:'hit',gx:f.x,gy:f.y,t:0,dur:.25});snd('hit')}
   if(f.dead&&u.hero&&B.kind==='defense'){B.gotG+=20*B.L;fx.push({k:'txt',gx:f.x,gy:f.y,s:'+'+20*B.L,col:'#ffcb2b',t:0,dur:1})}}
-function nearFoe(u,list,r){const T=TR[u.t];let best=null,bd=r;list.forEach(f=>{if(f.dead)return;if(TR[f.t].air&&T.range<2&&!T.air)return;if(T.air&&!TR[f.t].air)return;const d=Math.hypot(f.x-u.x,f.y-u.y);if(d<bd){bd=d;best=f}});return best}
+function nearFoe(u,list,r){const T=TR[u.t];let best=null,bd=r;list.forEach(f=>{if(f.dead)return;if(TR[f.t].air&&T.range<2&&!T.air)return;const d=Math.hypot(f.x-u.x,f.y-u.y);if(d<bd){bd=d;best=f}});return best}
 function stepDefender(u,dt){const B=BB;const foes=foesFor(u);const rg=(u.rage||0)>B.clock;
-  const f=nearFoe(u,foes,u.hero||u.fz?40:9);if(f){fightUnit(u,f,dt,rg);return}
+  const f=nearFoe(u,foes,u.hero||u.fz||u.dfd?40:9);if(f){fightUnit(u,f,dt,rg);return}
   if(u.home){const d=Math.hypot(u.home[0]-u.x,u.home[1]-u.y);if(d>.4){const st=Math.min(d,TR[u.t].speed*dt);u.x+=(u.home[0]-u.x)/d*st;u.y+=(u.home[1]-u.y)/d*st;u.moving=true;u.walk+=dt;return}}u.moving=false}
 stepHeroDef=stepDefender;
 const _stepA=stepAttacker;
@@ -2319,6 +2321,35 @@ function lifeTick(t,dt){const day=1-nightK;CLOUDS.forEach((m,i)=>{m.material.opa
 const _rvl=renderVillage;renderVillage=function(t,dt){_rvl(t,dt);const c=castle();if(c&&!c.buried){const [x,y]=proj(c.x+1.5,TOPH.castle+.15,c.y+1.5);const e=ovEl('nm');if(e._s!==HOMEN){e._s=HOMEN;e.innerHTML='<span>'+HOMEN+'</span>'}pos2(e,x,y)}};
 function gfxInit(){torches();lifeInit();buildEnv();upgradeGround();scatterDecor();WATERM.roughness=.05;WATERM.metalness=.15;WATERM.envMapIntensity=1.6;GOLDM.envMapIntensity=1.4;GOLDM.metalness=.7;GOLDM.roughness=.28;
   Object.values(MC).forEach(m=>{if(m.envMapIntensity!=null&&m!==WATERM&&m!==GOLDM)m.envMapIntensity=ENVK});setPipeline(gfxQuality()===2)}
+
+/* --- v0.6: army in defense + aim command --- */
+const canFight=(u,f)=>!(TR[f.t].air&&TR[u.t].range<2&&!TR[u.t].air);
+const _defBB7=defBB;defBB=function(rec,o){const B=_defBB7(rec,o);if(o&&o.live){B.left={...S.army};B.init={...S.army}}return B};
+function aimAt(gx,gy,rec){const B=BB;if(!B)return;let tg=null,bd=3.2;
+  if(B.kind==='defense'){B.raiders.forEach(r=>{if(r.dead)return;const d=Math.hypot(r.x-gx,r.y-gy);if(d<bd){bd=d;tg=r}})}
+  else if(B.kind==='caravan'){B.en.forEach(e=>{if(e.dead||e.escaped||B.prog+e.off<0)return;const d=Math.hypot(e.x-gx,e.y-gy);if(d<bd){bd=d;tg=e}})}
+  else{bd=2.4;B.bld.forEach(b=>{if(b.dead||b.t==='trap')return;const [px,py]=nearestPt(b,gx,gy);const d=Math.hypot(px-gx,py-gy)+(b.t==='wall'?.7:0);if(d<bd){bd=d;tg=b}})}
+  if(!tg){if(!SIM){fx.push({k:'no',gx,gy,t:0,dur:.6});toast(B.kind==='defense'?'اضغط على واحد من الغزاة':'اضغط على مبنى للعدو')}return}
+  B.focus=tg;B.units.forEach(u=>{if(u.dead||TR[u.t].heal||u.t==='k')return;if(B.kind!=='defense'){u.tgt=tg;u.goal=null;u.path=null}});
+  if(!SIM){const isB=tg.lvl!=null&&BT[tg.t];const [cx,cy]=isB?bcen(tg):[tg.x,tg.y];fx.push({k:'ring',gx:cx,gy:cy,t:0,dur:.6});fx.push({k:'txt',gx:cx,gy:cy,s:'هنا!',col:'#ffcb2b',t:0,dur:1});snd('deploy')}
+  if(rec&&B.live)B.rec.inputs.push({k:'a',x:gx,y:gy,tk:B.tick})}
+const _sd7=stepDefender;
+stepDefender=function(u,dt){const B=BB;if(TR[u.t].heal&&!u.edef){stepHealer(u,dt);return}
+  const f=B.focus;if(B.kind==='defense'&&!u.raider&&!u.edef&&f&&!f.dead&&canFight(u,f)){fightUnit(u,f,dt,(u.rage||0)>B.clock);return}_sd7(u,dt)};
+stepHeroDef=stepDefender;
+const _pt7=pickTarget;pickTarget=function(u){const B=BB;const f=B&&B.focus;if(f&&!f.dead&&!f.escaped&&!TR[u.t].heal&&u.t!=='k'&&!u.raider)return f;return _pt7(u)};
+const _dep7=deployAt;
+deployAt=function(gx,gy){const B=BB;if(!B||B.replay)return 'no';
+  if(B.sel==='aim'){if(mode!=='battle'||B.ended)return 'no';aimAt(gx,gy,true);return 'no'}
+  const n0=B.units.length;const r=_dep7(gx,gy);
+  if(B.kind==='defense'&&B.units.length>n0){const u=B.units[B.units.length-1];if(!u.hero){u.dfd=1;if(B.live&&!u._rec){u._rec=1;B.rec.inputs.push({k:'u',t:u.t,x:u.x,y:u.y,tk:B.tick})}}}
+  return r};
+applyInputs=function(B){while(B.inputs.length&&B.inputs[0].tk<=B.tick){const a=B.inputs.shift();
+  if(a.k==='h'){const hm=1+.16*((B.rec.hero||1)-1);B.heroOut=true;B.units.push({t:'h',x:a.x,y:a.y,hp:TR.h.hp*hm,maxhp:TR.h.hp*hm,dmg:TR.h.dmg*hm,cd:0,tgt:null,walk:0,moving:false,hero:1});fx.push({k:'puff',gx:a.x,gy:a.y,t:0,dur:.4})}
+  else if(a.k==='u'){const T=TR[a.t],m=1+.18*(((B.rec.tl||S.tlv)[a.t]||1)-1);B.units.push({t:a.t,x:a.x,y:a.y,hp:T.hp*m,maxhp:T.hp*m,dmg:T.dmg*m,cd:0,tgt:null,walk:0,moving:false,dfd:1});fx.push({k:'puff',gx:a.x,gy:a.y,t:0,dur:.4})}
+  else if(a.k==='a')aimAt(a.x,a.y,false);
+  else if(a.k==='s')B.spells.push({k:a.s,x:a.x,y:a.y,t:0});
+  else if(a.k==='n'){const h=B.units.find(u=>u.hero&&!u.dead);if(h){B.nakhwa=true;h.hp=Math.min(h.maxhp,h.hp+h.maxhp*.4);B.units.forEach(u=>{if(!u.dead&&Math.hypot(u.x-h.x,u.y-h.y)<4.5)u.rage=B.clock+8});fx.push({k:'ring',gx:h.x,gy:h.y,t:0,dur:.6})}}}};
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
