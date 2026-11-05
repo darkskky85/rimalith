@@ -445,7 +445,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
       <button class="btn y" id="mSet">الإعدادات</button>
     </div>
     <div class="credit">تصميم وتطوير <b>فهد العفاسي</b></div>
-    <div class="ver">نسخة تجريبية 0.9 · رمليث</div>
+    <div class="ver">نسخة تجريبية 1.0 · رمليث</div>
   </section>
 
   <!-- VILLAGE HUD -->
@@ -2974,6 +2974,42 @@ falconMesh=function(folded){const g=new THREE.Group();const BR=SM('#7a5a3a'),DK=
   const tail=new THREE.Mesh(tg,M('#6e5034',{side:THREE.DoubleSide}));tail.position.y=folded?.12:.17;if(folded)tail.rotation.z=.5;g.add(tail);
   if(folded){[-1,1].forEach(sg=>{CY(g,.012,.012,.08,'#ffd23a',.04,0,.04*sg,4)})}
   return g};
+
+/* ================= v1.0: online leaderboard (Supabase) ================= */
+const ONL={u:'https://ufcjjokojwbghvcryofj.supabase.co/rest/v1/rpc/',k:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmY2pqb2tvandiZ2h2Y3J5b2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4Njk3OTAsImV4cCI6MjEwOTQ0NTc5MH0.BAYKb5vTHdBPkgxyO1IjjAAFVWjc1fQsR2UrcRQ_jKQ',busy:false,top:null,err:false};
+const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uuid4=()=>crypto.randomUUID?crypto.randomUUID():'10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+function olInit(){if(!S.ol)S.ol={id:uuid4(),sec:uuid4()+uuid4(),name:'',rank:0,total:0,sig:''};return S.ol}
+async function rpc(f,b){const ac=new AbortController();const tm=setTimeout(()=>ac.abort(),9000);
+  try{const r=await fetch(ONL.u+f,{method:'POST',headers:{apikey:ONL.k,Authorization:'Bearer '+ONL.k,'Content-Type':'application/json'},body:JSON.stringify(b),signal:ac.signal});clearTimeout(tm);if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,120));return await r.json()}
+  finally{clearTimeout(tm)}}
+const olStars=()=>(S.camp&&S.camp.stars||[]).reduce((a,b)=>a+(b||0),0);
+const olSig=()=>[S.ol.name,S.tro,cl(),olStars()].join('|');
+async function olSync(force){const o=olInit();if(!o.name||ONL.busy||!navigator.onLine)return false;if(!force&&o.sig===olSig())return true;ONL.busy=true;
+  try{const base=S.b.map(b=>[b.t,b.x,b.y,b.lvl||1]);const r=await rpc('nf_sync',{p_id:o.id,p_secret:o.sec,p_name:o.name,p_trophies:S.tro|0,p_castle:cl(),p_stars:olStars(),p_league:LG[lgIdx()].n,p_base:{v:1,b:base}});
+    o.rank=r.rank;o.total=r.total;o.sig=olSig();ONL.err=false;save();return true}
+  catch(e){ONL.err=true;console.warn('sync',e);return false}finally{ONL.busy=false}}
+function olNameSheet(after){const o=olInit();openSheet('اسمك في المتصدرين',`<p class="note">اكتب الاسم اللي يطلع للاعبين في لوحة المتصدرين (من 2 إلى 20 حرف).</p>
+  <input id="olName" maxlength="20" value="${escH(o.name||'')}" placeholder="مثلاً: فهد" style="width:100%;font:700 18px var(--display,sans-serif);padding:12px;border:3px solid var(--edge);border-radius:14px;margin-bottom:12px;text-align:center;direction:rtl">
+  <button class="btn g" id="olSave" style="width:100%">حفظ</button>`);
+  const inp=$('#olName');setTimeout(()=>inp.focus(),200);
+  $('#olSave').onclick=async()=>{const v=inp.value.replace(/[<>]/g,'').trim();if(v.length<2){toast('الاسم قصير');snd('bad');return}o.name=v;o.sig='';save();snd('tap');$('#olSave').disabled=true;$('#olSave').textContent='جاري الحفظ…';await olSync(true);(after||lbSheet)()}}
+function lbRow(p,me){const md=p.rank<=3?['🥇','🥈','🥉'][p.rank-1]:'';const lg=LG.find(l=>l.n===p.league)||LG[0];
+  return `<div class="row" style="${me?'background:#fff2c2;border-color:#c98a1a':''};margin-bottom:6px;padding:6px 10px">
+    <div style="width:38px;text-align:center;font:400 ${md?'24':'18'}px var(--display)">${md||p.rank}</div>
+    <div class="rt" style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escH(p.name)}${me?' (أنت)':''}</b><small>قلعة ${p.castle} · <span style="color:${lg.c};filter:brightness(.75)">دوري ${escH(p.league||lg.n)}</span> · ${p.stars}⭐</small></div>
+    <div style="font:400 18px var(--display);white-space:nowrap">🏆 ${p.trophies}</div></div>`}
+async function lbSheet(){const o=olInit();if(!o.name){olNameSheet();return}
+  const head=()=>`<div class="lg-hero"><div class="ri">${art('trophy')}</div><div class="rt" style="flex:1"><b>${escH(o.name)}</b><small>${o.rank?`ترتيبك ${o.rank} من ${o.total} لاعب`:'ما انحسب ترتيبك للحين'} · 🏆 ${S.tro}</small></div><button class="btn sm" id="olRen">تعديل</button></div>`;
+  openSheet('المتصدرين',head()+`<div id="lbList"><p class="note">جاري التحميل…</p></div>`);const bind=()=>{const b=$('#olRen');if(b)b.onclick=()=>olNameSheet()};bind();
+  const ok=await olSync(true);let top=null;try{top=await rpc('nf_top',{p_limit:50});ONL.top=top}catch(e){top=ONL.top}
+  if(!$('#lbList'))return;$('#sheetBody').querySelector('.lg-hero').outerHTML=head();paintArt($('#sheetBody'));bind();
+  if(!top){$('#lbList').innerHTML='<p class="note">ما قدرنا نوصل للسيرفر. تأكد من النت وجرّب مرة ثانية.</p>';return}
+  let h=top.map(p=>lbRow(p,p.id===o.id)).join('');if(o.rank>top.length)h+=`<div style="text-align:center;font-weight:900;color:var(--muted);margin:4px 0">⋯</div>`+lbRow({rank:o.rank,name:o.name,castle:cl(),league:LG[lgIdx()].n,stars:olStars(),trophies:S.tro},true);
+  $('#lbList').innerHTML=(ok?'':'<p class="note">ما انحفظ آخر تقدّم لك، بنحاول مرة ثانية.</p>')+h+'<p class="note">الترتيب حسب الكؤوس. يتحدث تلقائياً كل ما تغيّرت كؤوسك أو قلعتك.</p>'}
+DTILES.splice(1,0,['lb','#xLb','trophy','المتصدرين','ترتيبك بين اللاعبين']);
+{const box=$('.side');const b=document.createElement('button');b.id='xLb';b.hidden=true;b.onclick=()=>{snd('tap');lbSheet()};box.appendChild(b)}
+setTimeout(()=>olSync(),4000);setInterval(()=>{if(!document.hidden)olSync()},45000);addEventListener('online',()=>olSync());
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
