@@ -445,7 +445,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
       <button class="btn y" id="mSet">الإعدادات</button>
     </div>
     <div class="credit">تصميم وتطوير <b>فهد العفاسي</b></div>
-    <div class="ver">نسخة تجريبية 1.1 · رمليث</div>
+    <div class="ver">نسخة تجريبية 1.2 · رمليث</div>
   </section>
 
   <!-- VILLAGE HUD -->
@@ -1449,7 +1449,7 @@ function endBattle(){
   const g=Math.max(0,Math.min(Math.floor(B.gotG),capG()-S.gold)),w=Math.max(0,Math.min(Math.floor(B.gotW),capW()-S.water));S.gold+=g;S.water+=w;
   const win=B.stars>0;let tr=0,bonus=0,extra='';
   if(B.camp!=null){const i=B.camp,prev=S.camp.stars[i]||0;S.camp.stars[i]=Math.max(prev,B.stars);if(prev===0&&B.stars>0)bonus+=5;if(prev<3&&B.stars===3)bonus+=10;if(bonus){S.gems+=bonus;extra=`<p class="note">مكافأة الحملة: ${bonus} ${art('gem')}</p>`}}
-  else{tr=win?Math.round((B.stars*8+ri(0,4))*(evOn('war')?1.5:1)):-ri(6,12);S.tro=Math.max(0,S.tro+tr);olEv('atk',tr,B.stars)}
+  else if(B.vf){tr=0}else{tr=win?Math.round((B.stars*8+ri(0,4))*(evOn('war')?1.5:1)):-ri(6,12);S.tro=Math.max(0,S.tro+tr);olEv('atk',tr,B.stars)}
   if(win){stat('wins');addXP(10+B.stars*8)}
   if(B.kind==='caravan')stat('camels',B.killed||0);
   snd(win?'win':'lose');musTo(win?'victory':'defeat');
@@ -1457,7 +1457,7 @@ function endBattle(){
   openModal(`<div class="mhead ${win?'win':'lose'}"><h3>${win?'انتصار!':'هزيمة'}</h3></div>
     <div class="big-stars">${[0,1,2].map(i=>`<span class="${i<B.stars?'':'off'}">${art('star')}</span>`).join('')}</div>
     <p>${B.kind==='caravan'?`نهبت ${B.killed||0} من ${B.total} جمال${B.escaped?' وهرب '+B.escaped:''}`:`دمّرت ${Math.floor(B.pct)}% من ${esc(B.name)}`}</p>
-    <div class="loot"><span>${art('coin')}${fmt(g)}</span><span>${art('drop')}${fmt(w)}</span>${B.camp==null?`<span>${art('trophy')}<bdi>${tr>0?'+':''}${tr}</bdi></span>`:''}</div>
+    <div class="loot"><span>${art('coin')}${fmt(g)}</span><span>${art('drop')}${fmt(w)}</span>${B.camp==null?`<span>${art('trophy')}<bdi${B.vf?' id="vfTr"':''}>${tr>0?'+':''}${tr}</bdi></span>`:''}</div>
     ${extra}${(B.gotG>g+1||B.gotW>w+1)?'<p class="note">خزائنك ما وسعت كل الغنيمة. رقِّ الخزائن.</p>':''}
     <div class="mb">${nextC?'<button class="btn y" id="rNext">المرحلة الجاية</button>':''}<button class="btn g" id="rHome">رجوع للقلعة</button></div>`);
   home();const rn=$('#rNext');if(rn)rn.onclick=()=>{modalLock=false;closeModal();toVillage();startCampaign(B.camp+1)};
@@ -3028,6 +3028,112 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
     if(first)o.q=[];o.reg=true;o.rank=r.rank;o.total=r.total;if(typeof r.trophies==='number'&&!o.q.length){o.tro=r.trophies;S.tro=r.trophies;hud&&hud()}o.sig=olSig();ONL.err=false;save();return true}
   catch(e){ONL.err=true;console.warn('sync',e);return false}finally{ONL.busy=false}};
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
+
+/* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
+const NFBUILD='e4fcdb1e5344';
+let VF_SIM=false;
+const __RR=Math.random;
+/* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
+const realR=f=>function(){const o=Math.random;Math.random=__RR;try{return f.apply(this,arguments)}finally{Math.random=o}};
+P=realR(P);snd=realR(snd);shake=realR(shake);confettiAt=realR(confettiAt);bigText=realR(bigText);banner=realR(banner);toast=realR(toast);celebrate=realR(celebrate);coinFly=realR(coinFly);
+function pvRand(fn,R){const o=Math.random;Math.random=R;try{return fn()}finally{Math.random=o}}
+const r3=v=>Math.round(v*1000)/1000;
+const VFU=ONL.u.replace('/rest/v1/rpc/','/functions/v1/nf-verify');
+const vfOn=()=>!!(S.ol&&S.ol.reg&&S.ol.name&&navigator.onLine&&!VF_SIM);
+
+/* ---- base snapshot of a real player, cleaned the same way on client and server ---- */
+function vfCleanBase(snap,L){const out=[],cnt={};let castle=false;
+  (snap||[]).forEach(a=>{if(!Array.isArray(a))return;let [t,x,y,l]=a;const d=BT[t];if(!d||d.decor||!d.hp)return;x=x|0;y=y|0;l=Math.max(1,Math.min(MAXL,l|0,t==='castle'?L:L));
+    if(t==='castle'){if(castle)return;castle=true;l=L}else{const lim=LIM[t];const mx=lim?lim[Math.min(lim.length,L)-1]:(t==='stable'?1:0);cnt[t]=(cnt[t]||0)+1;if(cnt[t]>mx)return}
+    if(!inGrid(x,y,d.s))return;out.push([t,x,y,l])});return out}
+function vfApplyBase(B,snap){const bl=[];snap.forEach(([t,x,y,l])=>{const d=BT[t];const hp=d.hp[Math.min(d.hp.length,l)-1];bl.push({t,x,y,lvl:l,hp,maxhp:hp,cd:rnd(0,1)})});
+  B.bld=bl;B.guardQ=null;B.defs=null;
+  const lootable=B.bld.filter(b=>['goldstore','waterstore','goldmine','well','castle'].includes(b.t));
+  lootable.forEach(b=>{const w=b.t==='castle'?.15:(b.t.includes('store')?.6/Math.max(1,B.bld.filter(x=>x.t.includes('store')).length):.25/Math.max(1,B.bld.filter(x=>x.t==='goldmine'||x.t==='well').length));
+    b.lg=(b.t==='waterstore'||b.t==='well')?0:B.availG*w*(b.t.includes('store')?2:1);b.lw=(b.t==='goldstore'||b.t==='goldmine')?0:B.availW*w*(b.t.includes('store')?2:1);if(b.t==='castle'){b.lg=B.availG*.15;b.lw=B.availW*.15}});
+  B.total=Math.max(1,B.bld.filter(b=>b.t!=='wall'&&b.t!=='trap').length);addGuards(B);computeBlocked()}
+/* ---- attacker setup, clamped to what the server-known castle level allows ---- */
+function vfSetupNow(){const B=BB;const fal=S.b.find(b=>b.t==='falcon'&&!b.buried);
+  return {army:{...B.init},sp:{...B.spInit},tl:{...S.tlv},hero:S.hero.lvl,h2:{...(S.h2||{})},fz:[...S.fz.list],cl:cl(),fal:fal?fal.lvl:0,gfx:S.gfx}}
+function vfClampSetup(s,cmax){const c=Math.max(1,Math.min(cmax|0||1,s.cl|0||1,MAXL));const o={cl:c,army:{},sp:{},tl:{},h2:{},fz:[],fal:Math.max(0,Math.min(c,s.fal|0)),gfx:s.gfx};
+  const cap=BT.barracks.house[Math.min(BT.barracks.house.length,c)-1];let used=0;
+  Object.keys(TR).forEach(k=>{const n=Math.max(0,(s.army||{})[k]|0);if(!n||TR[k].hero||H2.includes(k)||k==='h')return;if((TR[k].bl||1)>c)return;const sp=TR[k].space||1;const m=Math.min(n,Math.floor((cap-used)/sp));if(m>0){o.army[k]=m;used+=m*sp}});
+  H2.forEach(k=>{if((s.army||{})[k]&&c>=H2U[k])o.army[k]=1;if((s.h2||{})[k]&&c>=H2U[k])o.h2[k]=true});
+  Object.keys(TR).forEach(k=>{o.tl[k]=Math.max(1,Math.min(MAXL,c+1,(s.tl||{})[k]|0||1))});
+  Object.keys(SPL).forEach(k=>{o.sp[k]=Math.max(0,Math.min(3,(s.sp||{})[k]|0))});
+  o.hero=Math.max(1,Math.min(16,c*2+1,s.hero|0||1));
+  (s.fz||[]).slice(0,30).forEach(k=>{if(TR[k]&&!TR[k].hero&&k!=='h'&&!H2.includes(k))o.fz.push(k)});return o}
+function vfLoadSetup(st){S.army={};TROOPS.forEach(k=>S.army[k]=0);Object.assign(S.army,st.army);S.spells={...st.sp};S.tlv={...S.tlv,...st.tl};S.hero.lvl=st.hero;S.h2={...st.h2};S.fz.list=[...st.fz];
+  S.b=[{t:'castle',x:9,y:9,lvl:st.cl},{t:'barracks',x:3,y:3,lvl:st.cl}];if(st.fal)S.b.push({t:'falcon',x:15,y:3,lvl:st.fal});if(st.gfx)S.gfx=st.gfx}
+
+/* ---- build the battle from a server ticket (identical on client & server) ---- */
+const _ss13=startScout;
+function vfBuild(t,kind,o){const R0=mkRng(t.seed);const base=kind==='car'?'caravan':'base';
+  pvRand(()=>_ss13(base,Object.assign({},o||{},{L:t.L,_vf:1})),R0);const B=BB;if(!B)return null;
+  if(t.kind==='pvp'&&t.opp){B.name=t.opp.name;pvRand(()=>vfApplyBase(B,vfCleanBase(t.opp.base,t.L)),mkRng(t.seed^0x5bd1e995));B.pvpOpp=t.opp}
+  B.R=mkRng((t.seed+7)>>>0);B.tick=0;B.acc=0;B.vf={tid:t.tid,kind:t.kind,seed:t.seed,inputs:[],build:NFBUILD};return B}
+startScout=function(kind,o){o=o||{};
+  if(VF_SIM||o._vf||o.camp!=null||(kind!=='base'&&kind!=='caravan')||!vfOn())return _ss13(kind,o);
+  const k=kind==='caravan'?'car':(o.L||o.mapV!=null||o.g)?'ai':'pvp';const ph={_ph:1};const prevMode=mode;BB=ph;toast(k==='pvp'?'نبحث لك عن خصم…':'جاري التجهيز…');
+  rpc('nf_ticket',{p_id:S.ol.id,p_secret:S.ol.sec,p_kind:k,p_opts:{L:o.L||null,g:o.g||null,w:o.w||null,name:o.name||null}}).then(t=>{
+    if(BB!==ph)return;BB=null;const B=vfBuild(t,k,o);if(!B)return;if(ph.mapV!=null)B.mapV=ph.mapV;if(t.kind==='pvp'){renderBattleHud();banner('swords','خصم حقيقي!',esc(t.opp.name)+' · قلعة مستوى '+t.L+' · 🏆 '+t.opp.trophies)}})
+  .catch(e=>{console.warn('ticket',e);if(BB!==ph)return;BB=null;toast('ما قدرنا نوصل للسيرفر، المعركة بدون كؤوس');_ss13(kind,o)})};
+const _bb13=beginBattle;beginBattle=function(){const B=BB;if(B&&B.vf){B.tick=0;B.acc=0;B.vf.setup=vfSetupNow();if(!B.vf.sim&&!B.vf.replay)rpc('nf_begin',{p_id:S.ol.id,p_secret:S.ol.sec,p_tid:B.vf.tid}).catch(()=>{})}
+  return B&&B.vf?pvRand(()=>_bb13(),B.R):_bb13()};
+/* ---- input recording ---- */
+const _d13=deployAt;
+deployAt=function(gx,gy){const B=BB;if(B&&B.vf){if(B.vf.replay&&!B.vf.applying)return 'no';gx=r3(gx);gy=r3(gy);if(mode==='battle'&&!B.ended&&!B.vf.sim&&!B.vf.replay)B.vf.inputs.push({k:'d',s:B.sel,x:gx,y:gy,tk:B.tick});return pvRand(()=>_d13(gx,gy),B.R)}return _d13(gx,gy)};
+const _nk13=nakhwa;nakhwa=function(){const B=BB;if(B&&B.vf){if(B.vf.replay&&!B.vf.applying)return;if(!B.vf.sim&&!B.vf.replay&&mode==='battle'&&!B.ended)B.vf.inputs.push({k:'n',tk:B.tick});return pvRand(()=>_nk13(),B.R)}return _nk13()};
+const _h213=h2Ability;h2Ability=function(k,rec){const B=BB;if(B&&B.vf){if(B.vf.replay&&!B.vf.applying)return;if(rec&&!B.vf.sim&&!B.vf.replay&&!B.ended)B.vf.inputs.push({k:'ab',h:k,tk:B.tick});return pvRand(()=>_h213(k,false),B.R)}return _h213(k,rec)};
+Promise.resolve().then(()=>{const e=$('#bEnd');if(!e||!e.onclick)return;const f=e.onclick;e.onclick=function(){const B=BB;if(B&&B.vf){if(B.vf.replay){toVillage();return}if(!B.ended)B.vf.inputs.push({k:'e',tk:B.tick})}return f.apply(this,arguments)}});
+function vfApply(B){const q=B.vf.q;while(q.length&&q[0].tk<=B.tick){const a=q.shift();B.vf.applying=true;try{
+    if(a.k==='d'){B.sel=a.s;deployAt(a.x,a.y)}else if(a.k==='n')nakhwa();else if(a.k==='ab')h2Ability(a.h,false);else if(a.k==='e'){B.ended=true}}finally{B.vf.applying=false}}}
+function vfTick(B){if(B.ended)return;pvRand(()=>battleTick(STEP),B.R);B.tick++}
+const _sb13=stepBattle;
+stepBattle=function(dt){const B=BB;if(B&&B.vf&&mode==='battle'){B.acc=(B.acc||0)+dt*(B.speed||1);let n=0;while(B.acc>=STEP&&n++<12&&!B.ended){B.acc-=STEP;if(B.vf.replay)vfApply(B);vfTick(B)}
+    if(B.vf.replay&&B.ended&&!B.vf.endShown){B.vf.endShown=1;setTimeout(()=>vfReplayEnd(B),900)}}else _sb13(dt)};
+/* ---- server side: rebuild + replay the battle exactly (also used for defender replays) ---- */
+function vfSimulate(t,rec){VF_SIM=true;const S0=S;try{
+  S=JSON.parse(JSON.stringify(S0));S.ol=null;const st=vfClampSetup(rec.setup||{},t.att_castle||1);vfLoadSetup(st);
+  BB=null;mode='village';const B=vfBuild(t,t.kind==='car'?'car':t.kind,t.opts||{});if(!B)return {err:'build'};
+  B.vf.sim=true;B.vf.q=(rec.inputs||[]).slice(0,4000).filter(a=>a&&typeof a.tk==='number'&&a.tk>=0).sort((a,b)=>a.tk-b.tk);
+  pvRand(()=>_bb13(),B.R);B.tick=0;let n=0;while(!B.ended&&n++<6000){vfApply(B);if(B.ended)break;vfTick(B)}
+  return {stars:B.stars|0,pct:Math.floor(B.pct||0),gotG:Math.floor(B.gotG||0),gotW:Math.floor(B.gotW||0),killed:B.killed||0,castle:!!B.destroyedCastle,ticks:B.tick,clamped:Object.keys(st.army).some(k=>st.army[k]!==((rec.setup||{}).army||{})[k])}}
+  finally{BB=null;mode='village';S=S0;VF_SIM=false}}
+/* ---- client: send the finished battle for verification ---- */
+async function vfSubmit(B){const o=S.ol;const body={id:o.id,secret:o.sec,tid:B.vf.tid,rec:{build:NFBUILD,setup:B.vf.setup,inputs:B.vf.inputs}};
+  const ac=new AbortController();const tm=setTimeout(()=>ac.abort(),25000);
+  try{const r=await fetch(VFU,{method:'POST',headers:{apikey:ONL.k,Authorization:'Bearer '+ONL.k,'Content-Type':'application/json'},body:JSON.stringify(body),signal:ac.signal});const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.err||r.status);return j}finally{clearTimeout(tm)}}
+const _eb13=endBattle;
+endBattle=function(){const B=BB;if(!B||!B.vf)return _eb13();if(B.vf.replay)return;if(B.result)return;
+  _eb13();const el=()=>$('#vfTr');const setTr=(h)=>{const e=el();if(e)e.innerHTML=h};setTr('…');
+  vfSubmit(B).then(j=>{S.tro=j.trophies;if(S.ol){S.ol.tro=j.trophies;S.ol.sig=''}setTr(`${j.tr>0?'+':''}${j.tr}`);if(j.stars!==B.stars)toast('السيرفر حسب '+j.stars+' نجوم');hud();save();
+      if(B.pvpOpp)toast(j.tr>=0?'كسبت على '+B.pvpOpp.name+'!':'خسرت قدام '+B.pvpOpp.name)})
+    .catch(e=>{console.warn('verify',e);setTr('0');toast(/version/.test(String(e))?'حدّث اللعبة عشان تنحسب الكؤوس':'ما انحسبت الكؤوس، تأكد من النت')})};
+/* ---- inbox: real players who attacked you ---- */
+function vfReplay(it){if(mode==='map')closeMap(true);closeSheet();closeModal();selB=null;selO=null;showSel();
+  const S0=S;const SS=JSON.parse(JSON.stringify(S0));SS.ol=null;let B;S=SS;VF_SIM=true;
+  try{vfLoadSetup(vfClampSetup(it.replay.setup||{},it.att_castle||1));BB=null;B=vfBuild(it.t,it.t.kind,it.t.opts||{})}finally{S=S0;VF_SIM=false}
+  if(!B)return;B.vf.replay=true;B.vf.simS=SS;B.vf.q=(it.replay.inputs||[]).slice().sort((a,b)=>a.tk-b.tk);B.speed=1;
+  S=SS;try{pvRand(()=>_bb13(),B.R)}finally{S=S0}B.tick=0;B.acc=0;B.name=it.attacker_name;renderBattleHud();bigText('إعادة هجوم '+it.attacker_name)}
+/* during a defender replay the attacker's army must be in S while ticking */
+const _vt13=vfTick;vfTick=function(B){if(B.vf.replay&&B.vf.simS){const S0=S;S=B.vf.simS;try{_vt13(B)}finally{S=S0}}else _vt13(B)};
+const _va13=vfApply;vfApply=function(B){if(B.vf.replay&&B.vf.simS){const S0=S;S=B.vf.simS;try{_va13(B)}finally{S=S0}}else _va13(B)};
+function vfReplayEnd(B){openModal(`<div class="mhead ${B.stars?'lose':'win'}"><h3>انتهت الإعادة</h3></div><p>${esc(B.name)} · ${'⭐'.repeat(B.stars)||'ولا نجمة'} · ضرر ${Math.floor(B.pct)}%</p><div class="mb"><button class="btn g" id="rHome">رجوع للقلعة</button></div>`);$('#rHome').onclick=()=>{modalLock=false;closeModal();toVillage()}}
+async function vfInbox(){if(!vfOn()||mode!=='village'||$('#modal').classList.contains('on'))return;let L_;try{L_=await rpc('nf_inbox',{p_id:S.ol.id,p_secret:S.ol.sec})}catch(e){return}
+  if(!L_||!L_.items||!L_.items.length){if(L_&&typeof L_.trophies==='number'&&!(S.ol.q||[]).length){S.tro=L_.trophies;hud()}return}
+  S.pvLog=S.pvLog||[];let lg=0,lw=0;L_.items.forEach(it=>{const g=Math.min(Math.floor(S.gold*.15),it.loot_g|0),w=Math.min(Math.floor(S.water*.15),it.loot_w|0);S.gold-=g;S.water-=w;lg+=g;lw+=w;it.lg=g;it.lw=w;S.pvLog.unshift(it)});S.pvLog=S.pvLog.slice(0,5);
+  if(typeof L_.trophies==='number'){S.tro=L_.trophies;S.ol.tro=L_.trophies}save();hud();
+  const it=L_.items[0];const n=L_.items.length;
+  openModal(`<div class="mhead ${it.stars?'lose':'win'}"><h3>${n>1?n+' لاعبين هاجموك!':it.stars?'لاعب هاجم مضاربك!':'صدّيت هجوم لاعب!'}</h3></div><div class="mi">${art(it.stars?'swords':'shield')}</div>
+    <p><b>${esc(it.attacker_name)}</b> ${it.stars?`أخذ ${'⭐'.repeat(it.stars)} ودمّر ${it.pct}%`:`هاجمك وما قدر عليك (${it.pct}%)`}</p>
+    <div class="loot"><span>${art('coin')}<bdi>-${fmt(lg)}</bdi></span><span>${art('drop')}<bdi>-${fmt(lw)}</bdi></span><span>${art('trophy')}<bdi>${L_.items.reduce((a,x)=>a+x.tr_def,0)>0?'+':''}${L_.items.reduce((a,x)=>a+x.tr_def,0)}</bdi></span></div>
+    <div class="mb"><button class="btn p" id="pvRp">${art('play')} شاهد الإعادة</button><button class="btn g" id="oOk">طيب</button></div>`);
+  $('#oOk').onclick=closeModal;$('#pvRp').onclick=()=>{closeModal();vfReplay(it)}}
+const _log13=logSheet;logSheet=function(){_log13();const L_=S.pvLog||[];if(!L_.length)return;const box=$('#sheetBody');
+  box.insertAdjacentHTML('afterbegin','<p class="note" style="margin-bottom:6px">هجمات لاعبين حقيقيين:</p>'+L_.map((r,i)=>`<div class="row"><div class="ri">${art(r.stars?'swords':'shieldr')}</div><div class="rt"><b>${esc(r.attacker_name)} · ${r.stars?'⭐'.repeat(r.stars):'صدّيته'}</b><small>ضرر ${r.pct}% · <bdi>${r.tr_def>0?'+':''}${r.tr_def}</bdi>${art('trophy')}</small></div><button class="btn p sm" data-pv="${i}">${art('play')} شاهد</button></div>`).join(''));paintArt(box);
+  box.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{snd('tap');vfReplay(S.pvLog[+b.dataset.pv])})};
+setTimeout(vfInbox,6000);setInterval(()=>{if(!document.hidden)vfInbox()},60000);
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
