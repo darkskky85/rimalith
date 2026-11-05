@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="قلاع النفود">
-<meta name="theme-color" content="#e0a45c">
+<meta name="theme-color" content="#1a0a04">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=5">
 <link rel="icon" href="icon-192.png?v=5">
@@ -27,10 +27,10 @@
   color-scheme:light;
 }
 html,body{height:100%;margin:0}
-html{background:#2a1408}
+html{background:#1a0a04;height:100%}
 :root{--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
-body{position:fixed;inset:0;width:100%;height:100%}
-body{background:#c98f4a;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+body{position:fixed;top:0;left:0;width:100%;height:100%;min-height:100%}
+body{background:#1a0a04;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #app{position:fixed;inset:0;overflow:hidden;overflow:clip}
@@ -472,6 +472,10 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 <script>
 (function(){
 'use strict';
+function fitApp(){try{const a=document.getElementById('app');if(!a)return;const sa=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;let h=window.innerHeight,w=window.innerWidth;
+  if(sa&&/iPhone|iPad|iPod/.test(navigator.userAgent)){const land=w>h;const sh=land?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height);if(sh>h)h=sh}
+  a.style.top='0';a.style.bottom='auto';a.style.height=h+'px';document.body.style.height=h+'px'}catch(e){}}
+fitApp();addEventListener('resize',fitApp);addEventListener('orientationchange',()=>setTimeout(fitApp,250));addEventListener('pageshow',fitApp);
 (function(){const wrap=n=>{const C=THREE[n];if(!C)return;const F=function(p){const m=new C(p);if(m.color)m.color.convertSRGBToLinear();if(m.emissive)m.emissive.convertSRGBToLinear();return m};F.prototype=C.prototype;THREE[n]=F};['MeshStandardMaterial','MeshBasicMaterial','MeshLambertMaterial','MeshPhongMaterial'].forEach(wrap)})();
 /* ================= ART (DOM icons) ================= */
 const E='#3a2410';
@@ -647,7 +651,7 @@ let shakeAmt=0;function shake(a){shakeAmt=Math.min(.6,Math.max(shakeAmt,a))}
 function updateCamera(){const ppu=PPU*cam.z;const sx=(Math.random()-.5)*shakeAmt,sz=(Math.random()-.5)*shakeAmt;const hw=W/2/ppu,hh=H/2/ppu;camera.left=-hw;camera.right=hw;camera.top=hh;camera.bottom=-hh;
   camera.position.set(cam.tx+sx+CAMDIR.x*95,CAMDIR.y*95,cam.tz+sz+CAMDIR.z*95);camera.lookAt(cam.tx+sx,0,cam.tz+sz);camera.updateProjectionMatrix();camera.updateMatrixWorld();
   sun.position.set(cam.tx-17,27,cam.tz-6);sun.target.position.set(cam.tx,0,cam.tz);sun.target.updateMatrixWorld()}
-function resize(){W=Math.max(1,cv.clientWidth);H=Math.max(1,cv.clientHeight);renderer.setPixelRatio(Math.min(MOB?1.6:2,window.devicePixelRatio||1));renderer.setSize(W,H,false);updateCamera();try{postSize()}catch(e){}}
+function resize(){fitApp();W=Math.max(1,cv.clientWidth);H=Math.max(1,cv.clientHeight);renderer.setPixelRatio(Math.min(MOB?1.6:2,window.devicePixelRatio||1));renderer.setSize(W,H,false);updateCamera();try{postSize()}catch(e){}}
 window.addEventListener('resize',()=>{resize();clampCam()});
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>{resize();clampCam()});
 window.addEventListener('orientationchange',()=>setTimeout(()=>{resize();clampCam()},300));
