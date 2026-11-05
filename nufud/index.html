@@ -3103,7 +3103,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='d0a87bd17efe';
+const NFBUILD='85f2d44095f4';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3469,6 +3469,34 @@ const _pu19=posUnit;
 posUnit=function(m,u,t,face){_pu19(m,u,t,face);const r=m.userData.hq;if(!r)return;const w=(u.walk||0)*10,mv=u.moving;
   r.rotation.x=mv?Math.sin(w)*.13:0;r.rotation.z=(!mv&&face)?-Math.max(0,Math.sin(t*9))*.28:(mv?-.06:0)};
 setTimeout(hqLoad,600);
+
+/* ================= v2.2: every building + remaining troops from the Canva concepts (Meshy, optimised) ================= */
+const HQB={goldmine:'goldmine',well:'well',goldstore:'goldstore',waterstore:'waterstore',barracks:'barracks',archer:'archer',catapult:'catapult',
+  falcon:'falcon',stable:'stable',firetower:'firetower',airdef:'airdef',souq:'souq'};
+const HQU2={w:['sayaf',.9],r:['qannas',.9]};
+function hqLoad2(){if(HQ.loading2||!THREE.GLTFLoader)return;HQ.loading2=true;const L=new THREE.GLTFLoader();
+  if(THREE.DRACOLoader){const d=new THREE.DRACOLoader();d.setDecoderPath('draco/');d.setDecoderConfig({type:'wasm'});L.setDRACOLoader(d)}
+  const files=[...new Set([...Object.values(HQB),'sayaf','qannas','saqr'])];
+  files.forEach(f=>L.load('models/hq/'+f+'.glb?v=1',gl=>{HQ.src['m_'+f]=hqPrep(f,gl.scene);HQ.ready['m_'+f]=1;hqRefresh(f)},undefined,e=>console.warn('hq2',f,e)))}
+const _bf20=buildFull;
+buildFull=function(t,L,o){o=o||{};const f=HQB[t];if(!f||!HQ.ready['m_'+f])return _bf20(t,L,o);
+  const s=BT[t].s,src=HQ.src['m_'+f],sz=src.userData.size,tier=tierOf(Math.max(1,L));const k=(s*.98/Math.max(sz.x,sz.z))*[.9,.96,1.02][tier-1];
+  const g=new THREE.Group();const body=new THREE.Group();src.children.forEach(m=>{const c=new THREE.Mesh(m.geometry,m.material);c.castShadow=true;c.receiveShadow=true;body.add(c)});
+  body.scale.setScalar(k);g.add(body);const top=sz.y*k;TOPH[t]=top+.15;const ud=g.userData;
+  if(t==='archer'){const a=dyn(unitMesh('a'));a.scale.setScalar(1.1);a.position.set(0,top*.86,0);g.add(a);ud.aim=a}
+  if(t==='falcon'){const fm=dyn(falconMesh(true));fm.position.set(0,top*.97,0);fm.scale.setScalar(1.2);g.add(fm);ud.head=fm.userData.head}
+  if(t==='firetower'){const fl=new THREE.Object3D();fl.position.y=top;g.add(fl);ud.flame=fl;ud.smk=[0,top,0]}
+  if(o.up)scaffold(g,s);if(o.buried)mound(g,s);return g};
+const _um20=unitMesh;
+unitMesh=function(t,enemy,boxc){const root=_um20(t,enemy,boxc);const ent=HQU2[t];if(!ent||!HQ.ready['m_'+ent[0]])return root;
+  const g=root.children[0];if(!g||!g.isGroup)return root;for(let i=g.children.length-1;i>=0;i--)g.remove(g.children[i]);
+  const body=hqClone('m_'+ent[0],ent[1],!!enemy);if(!body)return root;body.rotation.y=Math.PI/2;const rig=new THREE.Group();rig.add(body);g.add(rig);
+  if(t==='r')root.scale.setScalar(1);const ud=root.userData;ud.legs=null;ud.arm=null;ud.cape=null;ud.hq=rig;return root};
+const _fm20=falconMesh;
+falconMesh=function(a){const g=_fm20(a);if(!HQ.ready.m_saqr)return g;const keep=new Set([g.userData.head,...(g.userData.wings||[])]);
+  for(let i=g.children.length-1;i>=0;i--){const c=g.children[i];if(keep.has(c))c.visible=false;else g.remove(c)}
+  const b=hqClone('m_saqr',.5,false);if(b){b.rotation.y=Math.PI/2;b.position.y=-.02;g.add(b)}return g};
+setTimeout(hqLoad2,900);
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
