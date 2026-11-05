@@ -2547,7 +2547,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='9b7873af66fc';
+const NFBUILD='c9437d82aa0d';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -2730,6 +2730,67 @@ async function friendsSheet(){if(!needOnline())return;stopChat();
 async function friendAttack(f){closeSheet();toast('نجهّز المعركة الودية…');let t;try{t=await rpc('nf_ticket_friend',{p_id:S.ol.id,p_secret:S.ol.sec,p_friend:f.id})}catch(e){toast(/no base/.test(String(e))?'قلعة صديقك ما تحدثت للحين':'ما قدرنا نوصل للسيرفر');return}
   if(mode==='map')closeMap(true);BB=null;const B=vfBuild(t,'pvp',{});if(!B)return;B.friendly=true;renderBattleHud();banner('swords','معركة ودية','قلعة '+esc(f.name)+' · بدون كؤوس ولا غنيمة')}
 const _eb15=endBattle;endBattle=function(){const B=BB;if(B&&B.vf&&B.friendly&&!B.vf.replay&&!B.result){B.gotG=0;B.gotW=0}return _eb15()};
+
+/* ================= v1.4: cloud save + recovery, chat moderation, push notifications ================= */
+const FNU=ONL.u.replace('/rest/v1/rpc/','/functions/v1/');
+/* ---------- cloud save ---------- */
+let csLast='',csBusy=false;
+function cloudPayload(){const c=JSON.parse(JSON.stringify(S));delete c.pvLog;if(c.ol){c.ol={id:c.ol.id,name:c.ol.name,code:c.ol.code}}c.last=now();return c}
+async function cloudSave(force){if(!vfOn()||csBusy)return;const p=cloudPayload();const sig=JSON.stringify(p).replace(/"last":\d+/,'');if(!force&&sig===csLast)return;csBusy=true;
+  try{const r=await rpc('nf_save',{p_id:S.ol.id,p_secret:S.ol.sec,p_save:p});if(r&&r.ok){csLast=sig;S.ol.cloudAt=now();S.ol.hasCode=!!r.has_code||S.ol.hasCode}}catch(e){if(/not owner/.test(String(e))){S.ol.reg=false;toast('حسابك انفتح في جهاز ثاني')}}finally{csBusy=false}}
+setInterval(()=>{if(!document.hidden)cloudSave()},90000);setTimeout(()=>cloudSave(true),12000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&vfOn()){try{const p=cloudPayload();fetch(ONL.u+'nf_save',{method:'POST',keepalive:true,headers:{apikey:ONL.k,Authorization:'Bearer '+ONL.k,'Content-Type':'application/json'},body:JSON.stringify({p_id:S.ol.id,p_secret:S.ol.sec,p_save:p})}).catch(()=>{})}catch(e){}}});
+function accountSheet(){if(!needOnline())return;stopChat();const o=S.ol;
+  openSheet('حسابي',`<div class="lg-hero"><div class="ri">${art('shield')}</div><div class="rt" style="flex:1"><b>${escH(o.name)}</b><small>${o.cloudAt?'✅ محفوظ في السيرفر · آخر حفظ '+ago(Math.max(0,(now()-o.cloudAt)/1000)):'⏳ جاري الحفظ في السيرفر…'}</small></div></div>
+    <div class="row" style="display:block"><b style="font-family:var(--display);font-weight:400;font-size:17px">🔐 كود الاسترجاع</b><small style="display:block;color:var(--muted);font-weight:700;margin:4px 0 8px">لو ضاع جوالك أو حذفت اللعبة، هذا الكود يرجّع لك قلعتك وكؤوسك. احفظه في مكان آمن ولا تعطيه أحد.</small>
+      <div id="recBox" style="font:700 22px monospace;letter-spacing:3px;text-align:center;background:#fff6df;border:3px dashed var(--edge);border-radius:12px;padding:10px;margin-bottom:8px">${o.hasCode?'•••• - •••• - ••••':'—'}</div>
+      <button class="btn y" id="recNew" style="width:100%">${o.hasCode?'اطلع كود جديد (القديم يوقف)':'اطلع كود الاسترجاع'}</button></div>
+    <div class="row" style="display:block"><b style="font-family:var(--display);font-weight:400;font-size:17px">↩️ استرجاع حساب</b><small style="display:block;color:var(--muted);font-weight:700;margin:4px 0 8px">عندك كود من جهاز ثاني؟ اكتبه هنا. تقدّمك في هذا الجهاز بيتبدّل بالحساب المسترجع.</small>
+      <div style="display:flex;gap:8px"><input id="recIn" maxlength="14" placeholder="XXXX-XXXX-XXXX" style="flex:1;min-width:0;font:700 17px monospace;letter-spacing:2px;text-transform:uppercase;padding:10px;border:3px solid var(--edge);border-radius:14px;text-align:center"><button class="btn g" id="recGo" style="flex:0 0 auto">استرجع</button></div></div>`);
+  $('#recNew').onclick=async()=>{const b=$('#recNew');if(o.hasCode&&b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='متأكد؟ الكود القديم بيوقف';return}
+    try{await cloudSave(true);const r=await rpc('nf_rec_new',{p_id:o.id,p_secret:o.sec});o.hasCode=true;o.recShown=1;save();$('#recBox').textContent=r.code;snd('win');
+      b.textContent='📋 انسخ / شارك الكود';b.dataset.ok='2';b.onclick=async()=>{const t='كود استرجاع قلاع النفود: '+r.code;try{if(navigator.share){await navigator.share({text:t});return}}catch(e){return}try{await navigator.clipboard.writeText(r.code);toast('انسخ الكود')}catch(e){toast(r.code)}}}catch(e){toast('ما قدرنا نوصل للسيرفر')}};
+  $('#recGo').onclick=async()=>{const v=$('#recIn').value.trim();if(v.replace(/[^A-Za-z0-9]/g,'').length!==12){toast('الكود 12 حرف');return}const b=$('#recGo');if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='متأكد؟';return}
+    try{const r=await rpc('nf_recover',{p_code:v});if(!r.save){toast('الحساب ما له حفظ في السيرفر');return}const ns=r.save;ns.ol={id:r.id,sec:r.secret,name:r.name,code:r.code,reg:true,srv:ONL.srv,q:[],sig:'',hasCode:true,recShown:1};ns.tro=r.trophies;
+      S=ns;save();toast('رجع حسابك! نعيد تشغيل اللعبة…');snd('win');setTimeout(()=>location.reload(),900)}catch(e){const m=String(e);toast(/bad code/.test(m)?'الكود غلط':/slow/.test(m)?'محاولات كثيرة، جرّب بعد دقيقة':'ما قدرنا نوصل للسيرفر');snd('bad');b.dataset.ok='';b.textContent='استرجع'}}}
+/* ---------- push notifications ---------- */
+const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4);const b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))};
+async function pushEnable(){if(!needOnline())return;
+  if(!pushOK()){toast(isIOS&&!standalone()?'أضف اللعبة للشاشة الرئيسية أول (مشاركة ← إضافة إلى الشاشة الرئيسية)':'جهازك ما يدعم التنبيهات');return}
+  try{const perm=await Notification.requestPermission();if(perm!=='granted'){toast('رفضت التنبيهات. تقدر تفعّلها من إعدادات الجوال');return}
+    const reg=await navigator.serviceWorker.ready;const k=await fetch(FNU+'nf-push',{method:'POST',headers:{apikey:ONL.k,Authorization:'Bearer '+ONL.k,'Content-Type':'application/json'},body:'{"action":"key"}'}).then(r=>r.json());
+    let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(k.key)});
+    await rpc('nf_push_sub',{p_id:S.ol.id,p_secret:S.ol.sec,p_sub:sub.toJSON()});S.ol.push=1;save();snd('win');toast('تمام! بيجيك تنبيه إذا أحد هاجمك أو راسلك');onlHub()}
+  catch(e){console.warn('push',e);toast('ما قدرنا نفعّل التنبيهات')}}
+async function pushOff(){try{const reg=await navigator.serviceWorker.ready;const s=await reg.pushManager.getSubscription();if(s)await s.unsubscribe()}catch(e){}try{await rpc('nf_push_off',{p_id:S.ol.id,p_secret:S.ol.sec})}catch(e){}S.ol.push=0;save();toast('وقفت التنبيهات');onlHub()}
+/* extend the hub with account + notifications */
+const _hub16=onlHub;onlHub=function(){_hub16();const box=$('#sheetBody');if(!box||!$('#hFr'))return;
+  const pushOn=S.ol.push&&pushOK()&&Notification.permission==='granted';
+  $('#hFr').insertAdjacentHTML('afterend',`<button class="btn" id="hAcc">🔐 حسابي</button><button class="btn ${pushOn?'':'y'}" id="hPush">${pushOn?'🔕 وقّف التنبيهات':'🔔 فعّل التنبيهات'}</button>`);
+  $('#hFr').style.gridColumn='1/3';$('#hAcc').onclick=()=>{snd('tap');accountSheet()};$('#hPush').onclick=()=>{snd('tap');pushOn?pushOff():pushEnable()};
+  if(!S.ol.recShown){box.querySelector('.lg-hero').insertAdjacentHTML('afterend',`<div class="note" style="border-color:#e8443a;background:#ffe3dc;color:#7a1a10" id="recNag">⚠️ <b>احفظ كود الاسترجاع</b> عشان ما يضيع حسابك لو غيّرت جوالك. <u>اضغط هنا</u></div>`);$('#recNag').onclick=()=>{snd('tap');accountSheet()}}};
+/* ---------- chat: report / mute / admin delete + bans ---------- */
+const _cp16=chatPull;
+chatPull=async function(){await _cp16();const box=$('#chatList');if(!box)return;
+  box.querySelectorAll('[data-mu]').forEach(e=>{e.onclick=null;const bub=e.parentElement;if(bub.dataset.wired)return;bub.dataset.wired=1;bub.style.cursor='pointer';
+    bub.onclick=ev=>{ev.stopPropagation();const ex=bub.querySelector('.chAct');if(ex){ex.remove();return}box.querySelectorAll('.chAct').forEach(x=>x.remove());
+      const mid=+bub.dataset.mid;const sid=e.dataset.mu;
+      bub.insertAdjacentHTML('beforeend',`<div class="chAct" style="display:flex;gap:6px;margin-top:6px"><button class="btn sm r" data-a="rep">🚩 بلاغ</button><button class="btn sm" data-a="mute">🔇 كتم</button>${CH.adm?'<button class="btn sm p" data-a="del">🗑️ حذف</button>':''}</div>`);
+      bub.querySelectorAll('[data-a]').forEach(b=>b.onclick=async e2=>{e2.stopPropagation();const a=b.dataset.a;
+        if(a==='mute'){S.mute.push(sid);save();toast('كتمته عندك');chatSheet(CH.room,CH.title);return}
+        if(a==='rep'){try{const r=await rpc('nf_report',{p_id:S.ol.id,p_secret:S.ol.sec,p_msg:mid});toast(r.muted?'انمنع من الدردشة 24 ساعة':'وصل البلاغ، شكراً');if(!S.mute.includes(sid))S.mute.push(sid);save();chatSheet(CH.room,CH.title)}catch(er){toast(/slow/.test(String(er))?'بلاغات كثيرة اليوم':'ما وصل البلاغ')}return}
+        if(a==='del'){try{await rpc('nf_mod_del',{p_id:S.ol.id,p_secret:S.ol.sec,p_msg:mid});bub.remove();toast('انحذفت')}catch(er){toast('ما انحذفت')}}})}})};
+/* tag bubbles with their message id and read moderation flags (patched pull) */
+const _rpc16=rpc;
+rpc=async function(f,b){const r=await _rpc16(f,b);
+  if(f==='nf_chat_get'&&r){CH.adm=!!r.adm;CH.ban=r.ban|0;setTimeout(()=>{const box=$('#chatList');if(!box)return;const bubs=[...box.children].filter(x=>!x.dataset.mid&&x.querySelector('small'));
+      const its=(r.items||[]).filter(m=>!S.mute.includes(m.sid));bubs.slice(-its.length).forEach((d,i)=>{if(its[i])d.dataset.mid=its[i].id});
+      const inp=$('#chatIn'),sb=$('#chatSend');if(CH.ban&&inp){inp.disabled=true;inp.placeholder='ممنوع من الدردشة '+CH.ban+' ساعة بسبب بلاغات';if(sb)sb.disabled=true}},0)}
+  if(f==='nf_chat_send'&&b&&String(b.p_room).startsWith('dm:')){fetch(FNU+'nf-push',{method:'POST',headers:{apikey:ONL.k,Authorization:'Bearer '+ONL.k,'Content-Type':'application/json'},body:JSON.stringify({action:'dm',id:S.ol.id,secret:S.ol.sec,to:String(b.p_room).slice(3)})}).catch(()=>{})}
+  return r};
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
