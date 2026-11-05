@@ -2245,7 +2245,7 @@ function postInit(){try{if(!renderer.capabilities.isWebGL2)return false;const gl
     fragmentShader:'uniform sampler2D tS;uniform vec2 px;varying vec2 vUv;void main(){vec3 c=texture2D(tS,vUv+px*vec2(-1.,-1.)).rgb+texture2D(tS,vUv+px*vec2(1.,-1.)).rgb+texture2D(tS,vUv+px*vec2(-1.,1.)).rgb+texture2D(tS,vUv+px*vec2(1.,1.)).rgb;gl_FragColor=vec4(min(c*.25,vec3(8.)),1.);}'});
   PST.blur=new THREE.ShaderMaterial({uniforms:{tS:{value:null},dir:{value:new THREE.Vector2()}},vertexShader:vs,depthTest:false,depthWrite:false,
     fragmentShader:'uniform sampler2D tS;uniform vec2 dir;varying vec2 vUv;void main(){vec3 c=texture2D(tS,vUv).rgb*.227;c+=(texture2D(tS,vUv+dir*1.385).rgb+texture2D(tS,vUv-dir*1.385).rgb)*.316;c+=(texture2D(tS,vUv+dir*3.231).rgb+texture2D(tS,vUv-dir*3.231).rgb)*.07;gl_FragColor=vec4(c,1.);}'});
-  PST.fin=new THREE.ShaderMaterial({uniforms:{tS:{value:null},tB:{value:null},tilt:{value:.85},bloom:{value:1},exposure:{value:1.32},vig:{value:.4},warm:{value:0},night:{value:0},t:{value:0},thr:{value:1.6},sat:{value:1.08},con:{value:1.04}},vertexShader:vs,depthTest:false,depthWrite:false,
+  PST.fin=new THREE.ShaderMaterial({uniforms:{tS:{value:null},tB:{value:null},tilt:{value:.85},bloom:{value:1},exposure:{value:1.32},vig:{value:.28},warm:{value:0},night:{value:0},t:{value:0},thr:{value:1.6},sat:{value:1.08},con:{value:1.04}},vertexShader:vs,depthTest:false,depthWrite:false,
     fragmentShader:`uniform sampler2D tS,tB;uniform float tilt,bloom,exposure,vig,warm,night,t,thr,sat,con;varying vec2 vUv;
       vec3 aces(vec3 color){float x=min(color.r,min(color.g,color.b));float off=x<.08?x-6.25*x*x:.04;color-=off;float peak=max(color.r,max(color.g,color.b));if(peak<.76)return color;float d=.24;float np=1.-d*d/(peak+d-.76);color*=np/peak;float g=1.-1./(.15*(peak-np)+1.);return mix(color,np*vec3(1.),g);}
       float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
@@ -2269,7 +2269,7 @@ function renderMain(t){if(!GQ.post){renderer.setRenderTarget(null);renderer.rend
   renderer.setRenderTarget(PST.scene);renderer.render(scene,camera);
   PST.down.uniforms.tS.value=PST.scene.texture;PST.down.uniforms.px.value.set(1/PST.w,1/PST.h);pass(PST.down,PST.a);
   const bl=PST.blur.uniforms;for(let i=0;i<2;i++){bl.tS.value=PST.a.texture;bl.dir.value.set((1+i)/PST.qw,0);pass(PST.blur,PST.b);bl.tS.value=PST.b.texture;bl.dir.value.set(0,(1+i)/PST.qh);pass(PST.blur,PST.a)}
-  const u=PST.fin.uniforms;u.tS.value=PST.scene.texture;u.tB.value=PST.a.texture;u.night.value=nightK;u.t.value=t%10;u.tilt.value=mode==='battle'||mode==='scout'?.45:.7;
+  const u=PST.fin.uniforms;u.tS.value=PST.scene.texture;u.tB.value=PST.a.texture;u.night.value=nightK;u.t.value=t%10;u.tilt.value=0;
   PST.q.material=PST.fin;renderer.setRenderTarget(null);renderer.render(PST.sc,PST.cam)}
 function gfxAuto(dt){if(!GQ.post||GQ.checked||!GQ.auto)return;GQ.fps.push(dt);if(GQ.fps.length<240)return;GQ.checked=true;const avg=GQ.fps.slice(60).reduce((a,b)=>a+b,0)/(GQ.fps.length-60);
   if(avg>1/26){S.gfx=1;setPipeline(false);toast('خففت الرسوم شوي عشان تكون اللعبة أسلس');save()}}
