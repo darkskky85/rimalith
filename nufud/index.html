@@ -97,13 +97,14 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .bigbtn.shop{background:linear-gradient(180deg,#a6f05a,#6fd12c 55%,#46a315)}
 
 /* selection panel */
-#sel{position:absolute;left:50%;bottom:calc(12px + var(--sb));transform:translate(-50%,140%);z-index:6;width:min(400px,calc(100% - 196px));min-width:180px;
+#sel{position:absolute;left:50%;bottom:calc(12px + var(--sb));transform:translate(-50%,calc(100% + 80px + var(--sb)));visibility:hidden;z-index:6;width:min(400px,calc(100% - 196px));min-width:180px;
   background:var(--paper);border:3px solid var(--edge);border-radius:18px;box-shadow:0 5px 0 var(--edge);padding:8px 10px 10px;text-align:center;transition:transform .25s cubic-bezier(.2,.9,.3,1.3)}
-#sel.on{transform:translate(-50%,0)}
+#sel.on{transform:translate(-50%,0);visibility:visible}
 #sel .ttl{font-family:var(--display);font-size:20px;color:#fff;line-height:1.1}
 #sel .sub{font-size:12px;font-weight:700;color:var(--muted);margin:2px 0 6px}
 #sel .acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-#placebar{position:absolute;left:50%;bottom:calc(16px + var(--sb));transform:translate(-50%,160%);z-index:7;display:flex;gap:10px;transition:transform .25s}
+#placebar{position:absolute;left:50%;bottom:calc(16px + var(--sb));transform:translate(-50%,calc(100% + 80px + var(--sb)));visibility:hidden;z-index:7;display:flex;gap:10px;transition:transform .25s,visibility 0s .25s}
+#placebar.on{visibility:visible;transition:transform .25s}
 #placebar.on{transform:translate(-50%,0)}
 #placebar .btn{width:64px;height:56px;font-size:26px}
 
@@ -481,7 +482,8 @@ function fitApp(){try{const a=document.getElementById('app');if(!a)return;const 
   const [st,sb]=safeProbe();let H=h;
   a.style.top='0';a.style.bottom='auto';a.style.height=H+'px';document.body.style.height=H+'px';
   const R=document.documentElement.style;const notch=ios&&sh>=780&&!land;
-  R.setProperty('--st',(notch&&st<20?47:st)+'px');R.setProperty('--sb',(notch&&sb<10?26:sb)+'px');
+  const shortWin=sa&&ios&&!land&&sh-h>=Math.max(30,st-8);
+  R.setProperty('--st',(notch&&st<20?47:st)+'px');R.setProperty('--sb',(shortWin?6:(notch&&sb<10?26:sb))+'px');
   FIT={ih:h,vv,sh,st,sb,H,sa,ios}}catch(e){}}
 fitApp();addEventListener('resize',fitApp);addEventListener('orientationchange',()=>setTimeout(fitApp,250));addEventListener('pageshow',fitApp);
 (function(){const wrap=n=>{const C=THREE[n];if(!C)return;const F=function(p){const m=new C(p);if(m.color)m.color.convertSRGBToLinear();if(m.emissive)m.emissive.convertSRGBToLinear();return m};F.prototype=C.prototype;THREE[n]=F};['MeshStandardMaterial','MeshBasicMaterial','MeshLambertMaterial','MeshPhongMaterial'].forEach(wrap)})();
