@@ -2547,7 +2547,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='1150d9eb8786';
+const NFBUILD='9b7873af66fc';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -2684,7 +2684,7 @@ function onlHub(){if(!needOnline())return;stopChat();
   $('#hAtk').onclick=()=>{const c=50*cl();if(S.gold<c){toast('ما عندك ذهب كفاية');snd('bad');return}if(!TROOPS.some(k=>S.army[k]>0)){toast('درّب جيش أول');snd('bad');return}S.gold-=c;snd('tap');closeSheet();startScout('base')};
   $('#hLb').onclick=()=>{snd('tap');lbSheet()};$('#hChat').onclick=()=>{snd('tap');chatSheet('g','الدردشة العامة')};$('#hFr').onclick=()=>{snd('tap');friendsSheet()};
   rpc('nf_me',{p_id:S.ol.id,p_secret:S.ol.sec}).then(m=>{S.ol.code=m.code;save();const c=$('#hubCode');if(c)c.textContent=m.code;const o=$('#hubOn');if(o)o.textContent=`المتصلين الحين: ${m.online} لاعب · شارك كود الصداقة مع ربعك عشان يضيفونك.`}).catch(()=>{const o=$('#hubOn');if(o)o.textContent='ما قدرنا نوصل للسيرفر.'})}
-$('#bOnl').onclick=()=>{snd('tap');onlHub()};
+$('#bOnl').onclick=()=>{snd('tap');onlHub()};{const b=document.createElement('button');b.id='xOnl';b.hidden=true;b.onclick=()=>{snd('tap');onlHub()};$('.side').appendChild(b);DTILES.unshift(['onl','#xOnl','trophy','أونلاين','دردشة وأصدقاء ولاعبين'])}
 /* ---- chat ---- */
 function stopChat(){clearInterval(CH.timer);CH.timer=0}
 function chatSheet(room,title){if(!needOnline())return;stopChat();CH.room=room;CH.last=0;CH.items=[];CH.title=title;
@@ -2699,7 +2699,7 @@ function chatSheet(room,title){if(!needOnline())return;stopChat();CH.room=room;C
 async function chatPull(){const room=CH.room;let r;try{r=await rpc('nf_chat_get',{p_id:S.ol.id,p_secret:S.ol.sec,p_room:room,p_after:CH.last})}catch(e){const o=$('#chatOn');if(o)o.textContent=/not friends/.test(String(e))?'ما عاد صديقك':'ما قدرنا نوصل للسيرفر';return}
   if(room!==CH.room)return;const o=$('#chatOn');if(o)o.textContent='🟢 المتصلين الحين: '+r.online;const box=$('#chatList');if(!box)return;
   const now_=Date.now()/1000;const nearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<60;
-  r.items.forEach(m=>{CH.last=Math.max(CH.last,m.id);if(S.mute.includes(m.sid))return;const d=document.createElement('div');
+  r.items.forEach(m=>{if(m.id<=CH.last)return;CH.last=Math.max(CH.last,m.id);if(S.mute.includes(m.sid))return;const d=document.createElement('div');
     d.style.cssText=`align-self:${m.me?'flex-start':'flex-end'};max-width:82%;background:${m.me?'#d9f5c2':'#fff'};border:2px solid var(--edge);border-radius:12px;padding:6px 10px;box-shadow:0 2px 0 var(--edge)`;
     d.innerHTML=`${m.me?'':`<b data-mu="${escH(m.sid)}" style="display:block;font-size:12px;color:#8a4a12;cursor:pointer">${escH(m.name)}</b>`}<span style="font-weight:700;font-size:15px;word-break:break-word">${escH(m.body)}</span><small style="display:block;font-size:10px;color:var(--muted);text-align:left">${ago(Math.max(0,now_-m.t))}</small>`;
     box.appendChild(d)});
