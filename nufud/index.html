@@ -516,7 +516,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
       <button class="btn y" id="mSet">الإعدادات</button>
     </div>
     <div class="credit">تصميم وتطوير <b>فهد العفاسي</b></div>
-    <div class="ver">نسخة تجريبية 1.5 · رمليث</div>
+    <div class="ver">نسخة تجريبية 2.0 · رمليث</div>
   </section>
 
   <!-- VILLAGE HUD -->
@@ -575,6 +575,8 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 </div>
 
 <script src="three.min.js"></script>
+<script src="GLTFLoader.js"></script>
+<script src="DRACOLoader.js"></script>
 <script>
 (function(){
 'use strict';
@@ -3101,7 +3103,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='9810a1f20849';
+const NFBUILD='fd1a975740d8';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3345,6 +3347,91 @@ rpc=async function(f,b){const r=await _rpc16(f,b);
       const inp=$('#chatIn'),sb=$('#chatSend');if(CH.ban&&inp){inp.disabled=true;inp.placeholder='ممنوع من الدردشة '+CH.ban+' ساعة بسبب بلاغات';if(sb)sb.disabled=true}},0)}
   if(f==='nf_chat_send'&&b&&String(b.p_room).startsWith('dm:')){fetch(FNU+'nf-push',{method:'POST',headers:{apikey:ONL.k,Authorization:'Bearer '+ONL.k,'Content-Type':'application/json'},body:JSON.stringify({action:'dm',id:S.ol.id,secret:S.ol.sec,to:String(b.p_room).slice(3)})}).catch(()=>{})}
   return r};
+
+/* ================= v1.6: proper 3D framing ================= */
+camera.fov=30;camera.updateProjectionMatrix();
+const PDEF=.86;cam.pitch=PDEF;
+/* frame the actual village: centre on the buildings and zoom so they fill the screen */
+function villageBox(){const bs=S.b.filter(b=>!b.buried&&BT[b.t]&&!BT[b.t].decor);if(!bs.length)return {cx:N/2,cz:N/2,w:12,h:12};
+  let x0=1e9,z0=1e9,x1=-1e9,z1=-1e9;bs.forEach(b=>{const s=BT[b.t].s||1;x0=Math.min(x0,b.x);z0=Math.min(z0,b.y);x1=Math.max(x1,b.x+s);z1=Math.max(z1,b.y+s)});
+  return {cx:(x0+x1)/2,cz:(z0+z1)/2,w:Math.max(10,x1-x0+3),h:Math.max(10,z1-z0+3)}}
+function camFitZ(){const v=villageBox();const yaw=cam.yaw;
+  const across=Math.abs(Math.cos(yaw))*v.w+Math.abs(Math.sin(yaw))*v.h, deep=Math.abs(Math.sin(yaw))*v.w+Math.abs(Math.cos(yaw))*v.h;
+  const hudTop=150,hudBot=120;const zW=(W*.94)/(PPU*across);const zH=(Math.max(200,H-hudTop-hudBot))/(PPU*deep*Math.sin(cam.pitch)+PPU*2.2);
+  return {v,z:Math.max(.55,Math.min(1.6,Math.min(zW,zH)*1.28))}}
+function camFit(anim){const f=camFitZ();const v=f.v;const z1=f.z;const tx1=v.cx,tz1=v.cz+.6;
+  if(!anim){cam.tx=tx1;cam.tz=tz1;cam.z=z1;clampCam();return}
+  const a={tx:cam.tx,tz:cam.tz,z:cam.z,p:cam.pitch,y:cam.yaw};const ty=Math.round((a.y-Math.PI/4)/(Math.PI*2))*Math.PI*2+Math.PI/4;let k=0;
+  const step=()=>{k=Math.min(1,k+.07);const e=1-Math.pow(1-k,3);cam.tx=a.tx+(tx1-a.tx)*e;cam.tz=a.tz+(tz1-a.tz)*e;cam.z=a.z+(z1-a.z)*e;cam.pitch=a.p+(PDEF-a.p)*e;cam.yaw=a.y+(ty-a.y)*e;updateCamera();if(k<1)requestAnimationFrame(step);else clampCam()};step()}
+camReset=function(){camFit(true)};
+const _cOn17=centerOn;
+centerOn=function(gx,gy,z){if(mode==='village'&&gx===10.5&&gy===10.5){cam.pitch=PDEF;camFit(false);return}_cOn17(gx,gy,z)};
+/* keep the camera on the village (no drifting off into empty sand) */
+const _cl17=clampCam;clampCam=function(){const v=villageBox();const r=mode==='village'?Math.max(v.w,v.h)/2+4:N/2+3;
+  cam.z=Math.max(.38,Math.min(2.2,cam.z));if(mode==='village'){cam.tx=Math.max(v.cx-r,Math.min(v.cx+r,cam.tx));cam.tz=Math.max(v.cz-r,Math.min(v.cz+r,cam.tz));updateCamera()}else _cl17()};
+/* lighter, finer rain so the view stays clear */
+const _rt17=rainTick;rainTick=function(dt){_rt17(dt);if(RAIN&&RAIN.visible){RAIN.material.opacity=.22*(GQ.wxK||0);RAIN.material.color.set('#e6f2ff');if(!RAIN.userData.thin){RAIN.userData.thin=1;RAIN.geometry.dispose();RAIN.geometry=new THREE.BoxGeometry(.012,.8,.012)}}};
+
+/* ================= v2.0: Blender-made buildings, units, animals + textured ground ================= */
+const MDL={ready:false,b:null,u:null,tex:{},mats:{}};
+const MDEF={mud:['#eed6b4','mud',.92,0],mud2:['#d1b899','mud',.95,0],white:['#f6ece0','mud',.9,0],stone:['#ecdcc4','stone',.9,0],court:['#e6d0b0','court',.95,0],
+  wood:['#ffffff','wood',.8,0],woodd:['#9e8c80','wood',.8,0],thatch:['#ffffff','thatch',.95,0],sadu:['#ffffff','sadu',.9,0],red:['#db3a2e','cloth',.85,0],green:['#33943f','cloth',.85,0],
+  black:['#29211e','cloth',.9,0],iron:['#ffffff','iron',.55,.7],gold:['#ffffff','gold',.35,.85],goldm:['#ffc74d',null,.3,1],water:['#ffffff','water',.15,0],leaf:['#5c9938','thatch',.8,0],
+  dark:['#170f0c',null,1,0],fire:['#ff7a1a',null,1,0,'#ff4800'],rope:['#c7a36b','thatch',.9,0],rock:['#ccA880','stone',.95,0],
+  team:['#ffffff','cloth',.85,0],team2:['#ffffff','cloth',.85,0],skin:['#f2b885',null,.7,0],skin2:['#c78c5c',null,.7,0],thobe:['#f7f5ee','cloth',.85,0],agal:['#100d0d',null,.6,0],
+  eye:['#080808',null,.3,0],beard:['#1f140f',null,.9,0],horse:['#6b381f',null,.55,0],horsed:['#1a120d',null,.7,0],camelc:['#d6a366',null,.8,0],camelc2:['#bd8a52',null,.8,0],
+  steel:['#dbe3ed',null,.25,.9],leather:['#5c381f',null,.7,0],bisht:['#33211a','cloth',.8,0],goat1:['#f2ebdc',null,.9,0],goat2:['#3d2b21',null,.9,0],horn:['#d9c799',null,.6,0],
+  glow:['#80ff8c',null,.5,0,'#2a9a3a'],cloth:['#f2eee0','cloth',.85,0]};
+function mdlTex(n,normal){const k=n+(normal?'_n':'');if(MDL.tex[k])return MDL.tex[k];const t=new THREE.TextureLoader().load('tex/'+k+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;
+  t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(!normal)t.encoding=THREE.sRGBEncoding;MDL.tex[k]=t;return t}
+function mdlMat(name,tint){const key=name+(tint||'');if(MDL.mats[key])return MDL.mats[key];const d=MDEF[name]||['#ffffff',null,.85,0];
+  const o={color:tint||d[0],roughness:d[2],metalness:d[3]};if(d[1]){o.map=mdlTex(d[1]);o.normalMap=mdlTex(d[1],true);o.normalScale=new THREE.Vector2(.7,.7)}if(d[4]){o.emissive=d[4];o.emissiveIntensity=.9}
+  const m=new THREE.MeshStandardMaterial(o);if(name==='red'||name==='green'||name==='sadu'||name==='black')m.side=THREE.DoubleSide;MDL.mats[key]=m;return m}
+const baseName=n=>String(n||'').replace(/\.\d+$/,'');
+function mdlClone(src,tints){const c=src.clone(true);c.traverse(o=>{if(o.isMesh){const mn=baseName(o.material&&o.material.name).replace(/^M_/,'');o.material=mdlMat(mn,tints&&tints[mn]);o.geometry=o.geometry.clone()}});return c}
+function mdlLoad(){if(MDL.loading||!THREE.GLTFLoader)return;MDL.loading=true;
+  const L=new THREE.GLTFLoader();if(THREE.DRACOLoader){const d=new THREE.DRACOLoader();d.setDecoderPath('draco/');d.setDecoderConfig({type:'wasm'});L.setDRACOLoader(d)}
+  const get=f=>new Promise((res,rej)=>L.load('models/'+f+'?v=2',g=>res(g),undefined,rej));
+  Promise.all([get('buildings.glb'),get('units.glb')]).then(([b,u])=>{const idx=s=>{const m={};s.scene.children.forEach(c=>m[baseName(c.name)]=c);return m};
+    MDL.b=idx(b);MDL.u=idx(u);MDL.ready=true;meshOf.forEach(e=>{e.key+='~'});animalsRefresh();if(typeof upgradeGround2==='function')upgradeGround2()}).catch(e=>{console.warn('models',e)})}
+const tierOf=L=>L<=2?1:L<=5?2:3;
+function findDyn(root,n){let r=null;root.traverse(o=>{if(!r&&baseName(o.name)===n)r=o});return r}
+const _bf18=buildFull;
+buildFull=function(t,L,o){o=o||{};L=Math.max(1,L);
+  if(!MDL.ready||t==='trap'||(BT[t]&&BT[t].decor))return _bf18(t,L,o);
+  const tier=tierOf(L);let g;
+  if(t==='wall'){const post=MDL.b['wallpost_'+tier],seg=MDL.b['wallx_'+tier];if(!post||!seg)return _bf18(t,L,o);g=new THREE.Group();g.add(mdlClone(post));
+    if(o.nb&&o.nb.x){const s=mdlClone(seg);g.add(s)}if(o.nb&&o.nb.z){const s=mdlClone(seg);s.rotation.y=-Math.PI/2;g.add(s)}}
+  else{const src=MDL.b[t+'_'+tier];if(!src)return _bf18(t,L,o);g=new THREE.Group();const c=mdlClone(src);g.add(c);const ud=g.userData;
+    const dn=['flag','flame','water','pile','waterCol','aim'];dn.forEach(k=>{const x=findDyn(c,'dyn_'+k);if(x){x.userData.dyn=1;x.traverse(q=>q.userData.dyn=1);ud[k]=x}});
+    const arm=findDyn(c,'dyn_arm');if(arm){ud.arm=arm;const st=findDyn(c,'dyn_stone');if(st)arm.userData.stone=st}
+    if(ud.flame)ud.smk=[0,TOPH[t]||1.5,0];
+    const pa=findDyn(c,'pt_archer');if(pa){const a=dyn(unitMesh('a'));a.scale.setScalar(1.25);a.position.copy(pa.position);c.add(a);ud.aim=a}
+    const pf=findDyn(c,'pt_falcon');if(pf){const f=dyn(falconMesh(true));f.position.copy(pf.position);f.scale.setScalar(1.3);c.add(f);ud.head=f.userData.head}
+    const ph=findDyn(c,'pt_hero');if(ph){const h=dyn(unitMesh('h'));h.position.copy(ph.position);h.rotation.y=.6;c.add(h);ud.hero=h}}
+  const s=BT[t].s;if(o.up)scaffold(g,s);if(o.buried)mound(g,s);return mergeStatic(g)};
+Object.assign(TOPH,{castle:3.9,archer:2.9,barracks:2.0,well:1.9,waterstore:2.0,goldstore:1.4,goldmine:1.5,catapult:1.7,stable:2.3,falcon:2.8,firetower:3.0,airdef:2.0,souq:1.5});
+/* units: keep the old root (shadow blob, scale, extras) but swap the body for the Blender model */
+const UT2={w:'#ffffff',a:'#3e8f17',k:'#ff9a2b',m:'#e8dcc0',g:'#8a52d6',p:'#ffffff',r:'#4a3a2a',c:'#e8443a',guard:'#2a1a3a',camel:'#e8dcc0',h:'#e8443a'};
+const _um18=unitMesh;
+unitMesh=function(t,enemy,boxc){const root=_um18(t,enemy,boxc);if(!MDL.ready||t==='f')return root;const src=MDL.u['u_'+t];if(!src)return root;
+  const g=root.children[0];if(!g||!g.isGroup)return root;for(let i=g.children.length-1;i>=0;i--)g.remove(g.children[i]);
+  const guard=t==='guard';const tc=(enemy||guard)?'#5a3a7a':(t==='camel'?(boxc||'#e8443a'):(TR[t]&&TR[t].col)||'#e8443a');const t2=(enemy||guard)?'#2a1a3a':UT2[t]||'#ffffff';
+  const c=mdlClone(src,{team:tc,team2:t2});const ud=root.userData;ud.legs=[];ud.arm=null;ud.cape=null;
+  const kids=[...c.children];kids.sort((a,b)=>baseName(a.name)<baseName(b.name)?-1:1).forEach(k=>{const n=baseName(k.name);g.add(k);if(/^leg\d/.test(n))ud.legs.push(k);else if(n==='arm')ud.arm=k;else if(n==='cape')ud.cape=k});
+  if(t==='p'||t==='r'){root.scale.setScalar(1.55)}
+  root.traverse(o=>{if(o.isMesh)o.castShadow=true});return root};
+const _goat18=goatMesh;goatMesh=function(){const g=_goat18();if(!MDL.ready)return g;const src=MDL.u[Math.random()<.5?'u_goat':'u_goatd'];if(!src)return g;
+  for(let i=g.children.length-1;i>=0;i--){const k=g.children[i];if(k.geometry!==BLOBG)g.remove(k)}const c=mdlClone(src);const legs=[];[...c.children].forEach(k=>{g.add(k);if(/^leg\d/.test(baseName(k.name)))legs.push(k)});g.userData.legs=legs;return g};
+function animalsRefresh(){if(typeof ANIM==='undefined')return;ANIM.forEach(a=>{const camel=a.sp<.6;const n=camel?unitMesh('camel'):goatMesh();if(camel)n.scale.multiplyScalar(.8);n.position.copy(a.m.position);n.rotation.copy(a.m.rotation);n.traverse(o=>{if(o.isMesh)o.castShadow=true});scene.remove(a.m);scene.add(n);a.m=n})}
+/* textured ground: courtyard + desert sand with normal maps */
+function gTex(n,r){const t=new THREE.TextureLoader().load('tex/'+n+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(r,r);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(!/_n$/.test(n))t.encoding=THREE.sRGBEncoding;return t}
+function upgradeGround2(){scene.traverse(o=>{if(!o.isMesh||!o.material)return;const m=o.material;if(Array.isArray(m))return;
+  if(o.geometry&&o.geometry.parameters&&o.geometry.parameters.width===N&&o.geometry.parameters.height===N&&o.geometry.type==='PlaneGeometry'){const t=gTex('sand',N/3);const nn=gTex('sand_n',N/3);
+    o.material=new THREE.MeshStandardMaterial({color:'#fbeedb',map:t,normalMap:nn,normalScale:new THREE.Vector2(.5,.5),roughness:.95});o.material.userData.grid=1}
+  else if(o.geometry&&o.geometry.parameters&&o.geometry.parameters.width===280){const t=gTex('sand',56);const nn=gTex('sand_n',56);
+    o.material=new THREE.MeshStandardMaterial({color:'#d2a57e',map:t,normalMap:nn,normalScale:new THREE.Vector2(.8,.8),roughness:1,vertexColors:!!o.geometry.attributes.color})}})}
+setTimeout(mdlLoad,300);
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
