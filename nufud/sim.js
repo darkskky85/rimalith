@@ -2547,7 +2547,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='85f2d44095f4';
+const NFBUILD='29f52be92810';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -2905,12 +2905,13 @@ const _um19=unitMesh;
 unitMesh=function(t,enemy,boxc){const root=_um19(t,enemy,boxc);if(t==='f')return root;const ent=t==='c'?['camel',1.15]:HQU[t];if(!ent||!HQ.ready[ent[0]])return root;
   const g=root.children[0];if(!g||!g.isGroup)return root;for(let i=g.children.length-1;i>=0;i--)g.remove(g.children[i]);
   const en=!!enemy||t==='guard';const body=hqClone(ent[0],ent[1],en);if(!body)return root;body.rotation.y=Math.PI/2;
-  const rig=new THREE.Group();rig.add(body);g.add(rig);
+  const rig=new THREE.Group();rig.add(body);g.add(rig);if(t==='camel'||t==='c'||t==='h')rig.userData.quad=1;
   if(t==='c'&&HQ.ready.w){const r=hqClone('w',.72,en);r.rotation.y=Math.PI/2;r.position.set(-.05,.62,0);rig.add(r)}
   if(t==='p'||t==='r')root.scale.setScalar(1);
   const ud=root.userData;ud.legs=null;ud.arm=null;ud.cape=null;ud.hq=rig;return root};
 const _pu19=posUnit;
 posUnit=function(m,u,t,face){_pu19(m,u,t,face);const r=m.userData.hq;if(!r)return;const w=(u.walk||0)*10,mv=u.moving;
+  if(r.userData.quad){const p=w*.55;r.rotation.x=0;r.rotation.z=mv?Math.sin(p)*.07:0;r.position.y=mv?Math.abs(Math.sin(p))*.045:0;m.position.y-=mv?Math.abs(Math.sin(w))*.08:0;return}
   r.rotation.x=mv?Math.sin(w)*.13:0;r.rotation.z=(!mv&&face)?-Math.max(0,Math.sin(t*9))*.28:(mv?-.06:0)};
 setTimeout(hqLoad,600);
 
