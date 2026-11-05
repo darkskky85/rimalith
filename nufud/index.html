@@ -1450,7 +1450,7 @@ function deployAt(gx,gy){
   if(gx<-3||gy<-3||gx>N+3||gy>N+3){fx.push({k:'no',gx,gy,t:0,dur:.6});return 'no'}
   if(k.startsWith('s:')){const sk=k.slice(2);if(!B.sp[sk])return;B.sp[sk]--;S.spells[sk]--;stat('spells');B.spells.push({k:sk,x:gx,y:gy,t:0});snd(sk==='storm'?'boom':'water');B.sel=null;renderBattleHud();return 'spell'}
   const tx=Math.floor(gx),ty=Math.floor(gy);if(B.kind!=='defense'&&B.blocked.has(ty*N+tx)){fx.push({k:'no',gx,gy,t:0,dur:.6});return 'no'}
-  if(k==='h'){if(B.heroOut)return;B.heroOut=true;const hp=TR.h.hp*heroMul();B.units.push({t:'h',x:gx,y:gy,hp,maxhp:hp,dmg:TR.h.dmg*heroMul(),cd:0,tgt:null,walk:0,moving:false,hero:1});B.dep++;
+  if(k==='h'){if(B.heroOut)return;B.heroOut=true;const hp=TR.h.hp*heroMul()*(typeof gearM==='function'?gearM('sh'):1);B.units.push({t:'h',x:gx,y:gy,hp,maxhp:hp,dmg:TR.h.dmg*heroMul()*(typeof gearM==='function'?gearM('sw'):1),cd:0,tgt:null,walk:0,moving:false,hero:1});B.dep++;
     snd('win');fx.push({k:'puff',gx,gy,t:0,dur:.4});fx.push({k:'txt',gx,gy,s:'الفارس!',col:'#ffcb2b',t:0,dur:1.2});shake(.15);B.sel=null;renderBattleHud();return}
   if(!B.left[k])return;
   const t=TR[k];B.left[k]--;S.army[k]--;B.dep++;const mu=tMul(k);
@@ -1522,7 +1522,7 @@ function endBattle(){
   const g=Math.max(0,Math.min(Math.floor(B.gotG),capG()-S.gold)),w=Math.max(0,Math.min(Math.floor(B.gotW),capW()-S.water));S.gold+=g;S.water+=w;
   const win=B.stars>0;let tr=0,bonus=0,extra='';
   if(B.camp!=null){const i=B.camp,prev=S.camp.stars[i]||0;S.camp.stars[i]=Math.max(prev,B.stars);if(prev===0&&B.stars>0)bonus+=5;if(prev<3&&B.stars===3)bonus+=10;if(bonus){S.gems+=bonus;extra=`<p class="note">مكافأة الحملة: ${bonus} ${art('gem')}</p>`}}
-  else if(B.vf){tr=0}else{tr=win?Math.round((B.stars*8+ri(0,4))*(evOn('war')?1.5:1)):-ri(6,12);S.tro=Math.max(0,S.tro+tr);olEv('atk',tr,B.stars)}
+  else if(B.vf||B.noTro){tr=0}else{tr=win?Math.round((B.stars*8+ri(0,4))*(evOn('war')?1.5:1)):-ri(6,12);S.tro=Math.max(0,S.tro+tr);olEv('atk',tr,B.stars)}
   if(win){stat('wins');addXP(10+B.stars*8)}
   if(B.kind==='caravan')stat('camels',B.killed||0);
   snd(win?'win':'lose');musTo(win?'victory':'defeat');
@@ -2797,10 +2797,10 @@ function seasonDecor(){const s=curSeason();const id=s?s.id:'';if(SEAS_G&&SEAS_G.
   const g=new THREE.Group();g.userData.id=id;const c=castle();const cx=c?c.x+1.5:N/2,cz=c?c.y+1.5:N/2;
   if(id==='ramadan'||id==='fitr'||id==='adha'){for(let i=0;i<14;i++){const a=i/14*Math.PI*2;const l=new THREE.Group();l.position.set(cx+Math.cos(a)*3.4,2.4+Math.sin(i*1.7)*.2,cz+Math.sin(a)*3.4);add(l,new THREE.OctahedronGeometry(.13,0),LANTM,0,0,0).scale.y=1.4;CY(l,.006,.006,.6,'#3a2a20',0,.12,0,3);g.add(l)}
     const mo=new THREE.Mesh(new THREE.TorusGeometry(2.4,.5,8,24,Math.PI*1.3),M('#ffe07a',{emissive:'#ffcb2b',emissiveIntensity:1.2}));mo.position.set(cx-8,14,cz-10);mo.rotation.z=.9;g.add(mo)}
-  if(id==='national'||id==='founding'){for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const f=new THREE.Group();f.position.set(cx+Math.cos(a)*5,0,cz+Math.sin(a)*5);CY(f,.03,.03,2.2,'#e8e8e8',0,0,0,5);const fl=dyn(new THREE.Group());fl.position.y=2.1;f.add(fl);BX(fl,.7,.42,.02,'#1f7a3a',.36,-.42,0);f.userData.flag=fl;g.add(f)}}
+  if((id==='national'||id==='flag')||id==='founding'){for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const f=new THREE.Group();f.position.set(cx+Math.cos(a)*5,0,cz+Math.sin(a)*5);CY(f,.03,.03,2.2,'#e8e8e8',0,0,0,5);const fl=dyn(new THREE.Group());fl.position.y=2.1;f.add(fl);BX(fl,.7,.42,.02,'#1f7a3a',.36,-.42,0);f.userData.flag=fl;g.add(f)}}
   scene.add(g);SEAS_G=g}
 let _fwT=0;function seasonTick(t,dt){if(mode!=='village')return;seasonDecor();const s=curSeason();if(SEAS_G){SEAS_G.visible=true;SEAS_G.traverse(o=>{if(o.userData&&o.userData.flag){o.userData.flag.rotation.y=Math.sin(t*3+o.position.x)*.3}})}
-  if(s&&(s.id!=='ramadan')&&nightK>.4){_fwT-=dt;if(_fwT<=0){_fwT=rnd(.6,1.6);const x=cam.tx+rnd(-8,8),z=cam.tz+rnd(-8,8),y=rnd(6,9);const cols=s.id==='national'||s.id==='founding'?['c4','white']:['c1','c2','c3','c4'];for(let i=0;i<30;i++){const a=Math.random()*6.28,b=Math.random()*3.14;P('sph',cols[i%cols.length],x,y,z,Math.cos(a)*Math.sin(b)*5,Math.cos(b)*5,Math.sin(a)*Math.sin(b)*5,1.2,.1,.01,{g:2})}snd('pop')}}}
+  if(s&&(s.id!=='ramadan')&&nightK>.4){_fwT-=dt;if(_fwT<=0){_fwT=rnd(.6,1.6);const x=cam.tx+rnd(-8,8),z=cam.tz+rnd(-8,8),y=rnd(6,9);const cols=(s.id==='national'||s.id==='flag')||s.id==='founding'?['c4','white']:['c1','c2','c3','c4'];for(let i=0;i<30;i++){const a=Math.random()*6.28,b=Math.random()*3.14;P('sph',cols[i%cols.length],x,y,z,Math.cos(a)*Math.sin(b)*5,Math.cos(b)*5,Math.sin(a)*Math.sin(b)*5,1.2,.1,.01,{g:2})}snd('pop')}}}
 const seasonProd=()=>{const s=curSeason();return s&&s.id==='ramadan'&&nightK>.5?1.2:1};
 function seasonGiftAvail(){const s=curSeason();if(!s||!s.gift)return false;return (S.sg||'')!==s.id+dayKey()}
 function seasonSheet(){const s=curSeason();const nx=nextSeason();
@@ -3103,7 +3103,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='29f52be92810';
+const NFBUILD='a0cc3eeaba00';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3498,6 +3498,175 @@ falconMesh=function(a){const g=_fm20(a);if(!HQ.ready.m_saqr)return g;const keep=
   for(let i=g.children.length-1;i>=0;i--){const c=g.children[i];if(keep.has(c))c.visible=false;else g.remove(c)}
   const b=hqClone('m_saqr',.5,false);if(b){b.rotation.y=Math.PI/2;b.position.y=-.02;g.add(b)}return g};
 setTimeout(hqLoad2,900);
+
+/* ================= v2.3: tribes (NPC), daily tasks, league season rewards, gold pass, nafir spell,
+   hero gear, practice on own base, share card, new Saudi events, poet verses ================= */
+const hashS=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const srng=s=>mkRng(hashS(s));
+/* ---------- tribes: all names and members are simulated ---------- */
+const NTRIBES=[{id:'saqr',n:'حلف الصقور',c:'#c0392b',min:0},{id:'dahna',n:'فرسان الدهناء',c:'#2e86c1',min:0},{id:'tuss',n:'هل الطعس',c:'#d4a017',min:100},
+  {id:'ared',n:'نشامى العارض',c:'#27ae60',min:200},{id:'sayah',n:'ربع الصياهد',c:'#8e44ad',min:300},{id:'najm',n:'عزوة النجم',c:'#e67e22',min:500},
+  {id:'ghada',n:'أهل الغضا',c:'#16a085',min:800},{id:'rimal',n:'سيوف الرمال',c:'#6d4c41',min:1200}];
+const NNAMES=['أبو ناصر','سلطان','نورة','بدر','العنود','تركي','أبو فهد','مشعل','ريم','فيصل','هيا','ذيب','الجوهرة','سعود','غلا','نايف','شهد','راكان','لولوة','حمد',
+  'موضي','عبدالرحمن','مها','خالد','أبو سالم','جواهر','ماجد','دانة','فارس','بندر','أبو مشاري','عبير','زياد','وعد','مساعد','أبو تركي'];
+const ROLES=['شيخ القبيلة','نائب','نائب','عضو'];
+function tribeMembers(id){const r=srng('m'+id);const pool=NNAMES.slice();const out=[];const base=(NTRIBES.find(t=>t.id===id)||{min:0}).min;
+  for(let i=0;i<12;i++){const k=Math.floor(r()*pool.length);const n=pool.splice(k,1)[0];const lvl=Math.max(1,Math.min(MAXL,Math.round(1+r()*Math.max(2,cl()+1))));
+    out.push({n,lvl,tro:Math.round(base+r()*600+lvl*60),role:ROLES[Math.min(3,i)],don:Math.floor(r()*40)})}
+  return out.sort((a,b)=>b.tro-a.tro)}
+function trb(){S.trb=S.trb||{id:null,chat:[],last:0,war:null,hist:[],chal:{},seen:0};return S.trb}
+const myTribe=()=>NTRIBES.find(t=>t.id===trb().id)||null;
+const NPC_LINES=['السلام عليكم يا القبيلة','صباح الخير يا ربع 🌞','أحد يبي فزعة؟ عندي سيّافين فاضيين','الحمدلله فزت بثلاث نجوم 🔥','كم باقي على حرب القبائل؟',
+  'لا تنسون تهاجمون في الحرب','أحد جرّب النفير؟ قوي مرة','مساء الخير','وش رايكم نرقّي البئر هالاسبوع؟','الصقر كشف لي ثلاث فخاخ اليوم 🦅','طاحت قلعتهم الحمدلله',
+  'يا ربع الهجن اليوم سريعة','أبشروا، ترقّى مخزني','الله يعطيكم العافية','مين أقوى فارس عندكم؟','قدّامي 3 مستويات وأوصل الدوري الذهبي','نبي نكسب الحرب هالمرة 💪',
+  'جربتوا تهجمون من الجنب؟ البوابة قوية','الفزعة وصلت؟','تحية لشيخ القبيلة'];
+const NPC_REPLY=[[/سلام/, 'وعليكم السلام ورحمة الله، هلا والله'],[/فزع/,'أبشر بالفزعة، أرسلتها لك'],[/شكر|يعطيك/,'العفو، ما سوينا إلا الواجب'],[/حرب/,'الحرب ماشية، باقي لك هجمات؟ لا تضيّعها'],
+  [/هلا|مرحب/,'هلا فيك نوّرت'],[/كيف/,'تمام الحمدلله، وأنت؟'],[/.*/,'كفو 👍']];
+function trbAddMsg(n,m,me,t){const T=trb();T.chat.push({n,m,me:!!me,t:t||Date.now()});T.chat=T.chat.slice(-60)}
+function trbTickChat(){const T=trb();if(!T.id)return;const nw=Date.now();if(!T.last)T.last=nw-3600000;const mem=tribeMembers(T.id);
+  let steps=0;while(T.last<nw&&steps<6){T.last+=Math.floor(120000+srng(T.id+T.last)()*360000);if(T.last>nw)break;const r=srng('c'+T.last);
+    trbAddMsg(mem[Math.floor(r()*mem.length)].n,NPC_LINES[Math.floor(r()*NPC_LINES.length)],false,T.last);steps++}
+  if(T.last<nw-7200000)T.last=nw-600000;
+  if(S.fz&&S.fz.ready&&S.fz.ready!==T.fzAck&&S.fz.ready>nw-3600000){T.fzAck=S.fz.ready;const r=srng('f'+S.fz.ready);trbAddMsg('أنت','طلبت فزعة من القبيلة',true,S.fz.ready-45000);
+    trbAddMsg(mem[Math.floor(r()*mem.length)].n,'أبشر، أرسلت لك جنود فزعة 🐪',false,S.fz.ready-30000)}}
+/* war: weekly vs another simulated tribe */
+function trbWar(){const T=trb();if(!T.id)return null;const w=weekNo();
+  if(!T.war||T.war.w!==w){if(T.war&&!T.war.done)trbWarClose(T.war);const r=srng('w'+w+T.id);const others=NTRIBES.filter(t=>t.id!==T.id);const en=others[Math.floor(r()*others.length)];
+    const em=tribeMembers(en.id).slice(0,8);T.war={w,en:en.id,bases:em.map((m,i)=>({n:'قلعة '+m.n,L:Math.max(1,Math.min(MAXL,cl()+Math.floor(r()*3)-1+(i<2?1:0))),seed:hashS('wb'+w+en.id+i),st:0})),
+      att:2,ta:12+Math.floor(r()*7),te:11+Math.floor(r()*10),done:false}}return T.war}
+function warProg(W){const t0=W.w*7*86400000-4*86400000,f=Math.max(0,Math.min(1,(Date.now()-t0)/(7*86400000)));const mine=W.bases.reduce((a,b)=>a+b.st,0);
+  return {f,us:Math.min(24,Math.floor(W.ta*f)+mine),them:Math.min(24,Math.floor(W.te*f)),mine}}
+function trbWarClose(W){const p=warProg(Object.assign({},W,{w:W.w}));const us=Math.min(24,W.ta+p.mine),them=W.te;W.done=true;const win=us>them;
+  trb().hist.unshift({w:W.w,en:W.en,us,them,win,claimed:false});trb().hist=trb().hist.slice(0,8)}
+function trbSheet(){trbTickChat();const T=trb();if(!T.id){trbPick();return}const t=myTribe();const mem=tribeMembers(T.id);const W=trbWar();const p=warProg(W);const en=NTRIBES.find(x=>x.id===W.en);
+  const unread=T.chat.filter(m=>m.t>(T.seen||0)&&!m.me).length;const rew=T.hist.find(h=>h.win&&!h.claimed);
+  openSheet('القبيلة',`<div class="lg-hero"><div class="ri" style="background:${t.c};border-radius:14px;padding:6px">${art('tent')}</div><div class="rt" style="flex:1"><b>${t.n}</b><small>${mem.length+1} عضو · مجموع الكؤوس ${fmt(mem.reduce((a,m)=>a+m.tro,0)+S.tro)}</small></div></div>
+    ${rew?`<button class="btn g" id="trRew" style="width:100%;margin-bottom:10px">🏆 فزنا على ${esc((NTRIBES.find(x=>x.id===rew.en)||{}).n||'')} · استلم 40${art('gem')}</button>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <button class="btn r" id="trWar" style="grid-column:1/3">⚔️ حرب القبائل ضد ${esc(en.n)} · ${p.us} ⭐ مقابل ${p.them} ⭐</button>
+      <button class="btn p" id="trChat">💬 دردشة القبيلة${unread?' ('+unread+')':''}</button><button class="btn y" id="trMem">👥 الأعضاء والتحديات</button>
+      <button class="btn" id="trWell">🪣 البئر والفزعة</button><button class="btn" id="trRank">📊 ترتيب القبائل</button></div>
+    <p class="note">القبائل وأعضاؤها شخصيات آلية داخل اللعبة. <button class="btn sm" id="trLeave" style="margin-inline-start:6px">غيّر القبيلة</button></p>`);
+  $('#trWar').onclick=()=>{snd('tap');trbWarSheet()};$('#trChat').onclick=()=>{snd('tap');trbChat()};$('#trMem').onclick=()=>{snd('tap');trbMembers()};
+  $('#trWell').onclick=()=>{snd('tap');_tribeSheet21()};$('#trRank').onclick=()=>{snd('tap');trbRank()};
+  $('#trLeave').onclick=()=>{snd('tap');trbPick()};
+  const rb=$('#trRew');if(rb)rb.onclick=()=>{rew.claimed=true;S.gems+=40;S.gold=Math.min(capG(),S.gold+1500*cl());snd('win');hud();save();trbSheet()}}
+function trbPick(){const T=trb();openSheet('اختر قبيلتك',`<p class="note">انضم لقبيلة عشان تدخل حرب القبائل الأسبوعية، وتتحدّى الأعضاء، وتسولف معهم. القبائل شخصيات آلية.</p>`+
+  NTRIBES.map(t=>{const ok=S.tro>=t.min;const m=tribeMembers(t.id);return `<div class="row ${T.id===t.id?'cur':''}"><div class="ri" style="background:${t.c};border-radius:12px">${art('tent')}</div><div class="rt"><b>${t.n}</b><small>${m.length} عضو · شيخها ${esc(m[0].n)} · تقبل من ${t.min} كأس</small></div><button class="btn sm ${ok?'g':''}" data-tj="${t.id}" ${ok&&T.id!==t.id?'':'disabled'}>${T.id===t.id?'قبيلتك':ok?'انضم':art('lock')}</button></div>`}).join(''));
+  $('#sheetBody').querySelectorAll('[data-tj]').forEach(e=>e.onclick=()=>{const id=e.dataset.tj;T.id=id;T.chat=[];T.last=0;T.war=null;T.seen=0;trbTickChat();const m=tribeMembers(id);
+    trbAddMsg(m[0].n,'حيّاك الله في '+NTRIBES.find(x=>x.id===id).n+'، نوّرت القبيلة 🌴');snd('win');save();trbSheet()})}
+function trbChat(){trbTickChat();const T=trb();T.seen=Date.now();
+  openSheet('دردشة القبيلة',`<div id="tcList" style="height:min(46vh,380px);overflow-y:auto;background:#fff6df;border:3px solid var(--edge);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px"></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><input id="tcIn" maxlength="160" placeholder="اكتب للقبيلة…" style="flex:1;min-width:0;font:700 16px var(--display,sans-serif);padding:10px 12px;border:3px solid var(--edge);border-radius:14px;direction:rtl"><button class="btn g" id="tcSend">إرسال</button></div>
+    <p class="note">الأعضاء شخصيات آلية ويردّون عليك.</p>`);
+  const draw=()=>{const box=$('#tcList');if(!box)return;const n=Date.now()/1000;box.innerHTML=T.chat.map(m=>`<div style="align-self:${m.me?'flex-start':'flex-end'};max-width:82%;background:${m.me?'#d9f5c2':'#fff'};border:2px solid var(--edge);border-radius:12px;padding:6px 10px;box-shadow:0 2px 0 var(--edge)">${m.me?'':`<b style="display:block;font-size:12px;color:#8a4a12">${esc(m.n)}</b>`}<span style="font-weight:700;font-size:15px;word-break:break-word">${esc(m.m)}</span><small style="display:block;font-size:10px;color:var(--muted);text-align:left">${ago(Math.max(0,n-m.t/1000))}</small></div>`).join('');box.scrollTop=box.scrollHeight};
+  draw();const inp=$('#tcIn');const send=()=>{const v=inp.value.trim();if(!v)return;inp.value='';trbAddMsg(S.ol&&S.ol.name||'أنت',v,true);snd('tap');draw();save();
+    const mem=tribeMembers(T.id);const who=mem[Math.floor(Math.random()*mem.length)].n;const rep=NPC_REPLY.find(([re])=>re.test(v))[1];
+    setTimeout(()=>{trbAddMsg(who,rep);save();if($('#tcList'))draw()},1500+Math.random()*2500)};
+  $('#tcSend').onclick=send;inp.onkeydown=e=>{if(e.key==='Enter')send()}}
+function trbMembers(){const T=trb();const mem=tribeMembers(T.id);T.chal=T.chal||{};
+  openSheet('أعضاء القبيلة',mem.map((m,i)=>{const won=T.chal[m.n];return `<div class="row"><div class="cnum">${i+1}</div><div class="rt"><b>${esc(m.n)} <small style="color:#8a4a12">· ${m.role}</small></b><small>${art('trophy')} ${m.tro} · قلعة مستوى ${m.lvl} · تبرّع ${m.don} جندي</small></div><button class="btn sm ${won?'':'y'}" data-ch="${i}">${won?'⭐'.repeat(won):'تحدّي'}</button></div>`}).join('')+
+    `<p class="note">التحدّي معركة ودّية على قلعة العضو: ما تكسب ولا تخسر كؤوس أو غنيمة، بس تاخذ خبرة.</p>`);
+  $('#sheetBody').querySelectorAll('[data-ch]').forEach(e=>e.onclick=()=>{const m=mem[+e.dataset.ch];trbBattle(hashS('ch'+T.id+m.n),m.lvl,'قلعة '+m.n,{chal:m.n})})}
+function trbWarSheet(){const W=trbWar();const p=warProg(W);const en=NTRIBES.find(x=>x.id===W.en);const days=Math.max(0,Math.ceil((1-p.f)*7));
+  openSheet('حرب القبائل',`<div class="lg-hero"><div class="rt" style="flex:1;text-align:center"><b>${esc(myTribe().n)} ⚔️ ${esc(en.n)}</b><small style="font-size:22px;font-weight:900"><bdi>${p.us} ⭐ — ${p.them} ⭐</bdi></small><small>باقي ${days} يوم · هجماتك الباقية: ${W.att}</small><div class="bar"><i style="width:${p.f*100}%"></i></div></div></div>`+
+    W.bases.map((b,i)=>`<div class="row"><div class="cnum">${i+1}</div><div class="rt"><b>${esc(b.n)}</b><small>مستوى ${b.L}</small></div><span style="font-size:18px;min-width:60px;text-align:center">${'⭐'.repeat(b.st)}${'☆'.repeat(3-b.st)}</span><button class="btn sm ${W.att>0&&b.st<3?'r':''}" data-wb="${i}" ${W.att>0&&b.st<3?'':'disabled'}>هاجم</button></div>`).join('')+
+    `<p class="note">كل نجمة تجيبها تنحسب للقبيلة، وباقي الأعضاء يهاجمون خلال الأسبوع. إذا فزنا بالحرب تاخذ 40 جوهرة. معارك الحرب ما تغيّر كؤوسك ولا تجيب غنيمة.</p>`);
+  $('#sheetBody').querySelectorAll('[data-wb]').forEach(e=>e.onclick=()=>{const i=+e.dataset.wb,b=W.bases[i];trbBattle(b.seed,b.L,b.n,{war:i})})}
+function trbRank(){const T=trb();const w=weekNo();const rows=NTRIBES.map(t=>{const r=srng('rk'+t.id+w);const m=tribeMembers(t.id);let pts=m.reduce((a,x)=>a+x.tro,0)+Math.floor(r()*800);if(t.id===T.id)pts+=S.tro+trb().hist.filter(h=>h.win).length*300;return {t,pts}}).sort((a,b)=>b.pts-a.pts);
+  openSheet('ترتيب القبائل',rows.map((x,i)=>`<div class="row ${x.t.id===T.id?'cur':''}"><div class="cnum">${i+1}</div><div class="ri" style="background:${x.t.c};border-radius:12px">${art('tent')}</div><div class="rt"><b>${x.t.n}</b><small>${fmt(x.pts)} نقطة</small></div></div>`).join(''))}
+function trbBattle(seed,L,name,meta){if(!TROOPS.some(k=>S.army[k]>0)){toast('درّب جيش أول');snd('bad');return}
+  if(meta.war!=null){const W=trbWar();if(W.att<=0){toast('خلصت هجماتك في هالحرب');return}W.att--;save()}
+  closeSheet();snd('tap');pvRand(()=>_ss13('base',{L,name}),mkRng(seed));if(!BB)return;Object.assign(BB,meta,{noTro:1,noLoot:1,availG:0,availW:0});BB.bld.forEach(b=>{b.lg=0;b.lw=0})}
+const _tribeSheet21=tribeSheet;tribeSheet=trbSheet;
+/* ---------- daily tasks ---------- */
+const DQ=[{id:'win',t:'افز بـ 3 معارك',k:'wins',n:3},{id:'s3',t:'اربح معركة بثلاث نجوم',k:'stars3',n:1},{id:'cg',t:'جمّع 3000 ذهب',k:'collectG',n:3000},{id:'cw',t:'جمّع 3000 موية',k:'collectW',n:3000},
+  {id:'tr',t:'درّب 20 جندي',k:'trained',n:20},{id:'sp',t:'استخدم تعويذتين',k:'spells',n:2},{id:'nk',t:'استخدم النخوة',k:'nakhwa',n:1},{id:'cm',t:'انهب 4 جمال من القوافل',k:'camels',n:4},
+  {id:'up',t:'رقِّ مبنى',k:'upgrades',n:1},{id:'rc',t:'سابق في الهجن',k:'races',n:1},{id:'hn',t:'روح مقناص بالصقر',k:'hunts',n:1},{id:'df',t:'صد غارة',k:'defWins',n:1}];
+function dqCheck(){const d=dayKey();if(!S.dq||S.dq.day!==d){const r=srng('dq'+d);const pool=DQ.slice();const ids=[];for(let i=0;i<3;i++)ids.push(pool.splice(Math.floor(r()*pool.length),1)[0].id);S.dq={day:d,ids,base:{...S.st},got:[],all:false}}return S.dq}
+const dqV=q=>Math.max(0,(S.st[q.k]||0)-(S.dq.base[q.k]||0));
+function dqHTML(){const D=dqCheck();const qs=D.ids.map(id=>DQ.find(q=>q.id===id));const all=qs.every(q=>D.got.includes(q.id));
+  return `<div class="lg-hero" style="margin-bottom:10px"><div class="ri">${art('scroll')}</div><div class="rt" style="flex:1"><b>مهام اليوم</b><small>تتجدد كل يوم · كل مهمة 4${art('gem')} و 20 نقطة موسم، والثلاث مع بعض صندوق 10${art('gem')}</small></div></div>`+
+    qs.map(q=>{const v=dqV(q),done=D.got.includes(q.id),can=!done&&v>=q.n;return `<div class="row"><div class="rt"><b>${q.t}</b><small><bdi>${fmt(Math.min(v,q.n))} / ${fmt(q.n)}</bdi></small><div class="bar"><i style="width:${Math.min(100,v/q.n*100)}%"></i></div></div><button class="btn sm ${can?'g':''}" data-dq="${q.id}" ${can?'':'disabled'}>${done?'استلمت':'4'+art('gem')}</button></div>`}).join('')+
+    (all&&!D.all?`<button class="btn g" id="dqAll" style="width:100%;margin:8px 0">🎁 افتح صندوق اليوم · 10${art('gem')}</button>`:'')+'<hr style="border:0;border-top:2px dashed var(--edge);margin:12px 0">'}
+const _qs21=questSheet;questSheet=function(){_qs21();const B=$('#sheetBody');if(!B)return;B.insertAdjacentHTML('afterbegin',dqHTML());if(typeof paintArt==='function')paintArt(B);
+  B.querySelectorAll('[data-dq]').forEach(e=>e.onclick=()=>{const D=S.dq;const q=DQ.find(x=>x.id===e.dataset.dq);if(!q||D.got.includes(q.id)||dqV(q)<q.n)return;D.got.push(q.id);S.gems+=4;seasonCheck();S.season.pts+=20;snd('win');hud();save();questSheet()});
+  const a=$('#dqAll');if(a)a.onclick=()=>{S.dq.all=true;S.gems+=10;snd('win');hud();save();questSheet()}};
+/* ---------- league season: monthly end reward by highest league reached ---------- */
+const LGR=[0,5,10,20,35,60,100];
+function lgmCheck(){const k=seasonKey();const i=lgIdx();if(!S.lgm){S.lgm={k,max:i};return}
+  if(S.lgm.k!==k){const r=LGR[S.lgm.max]||0,n=LG[S.lgm.max].n;S.lgm={k,max:i};if(r){S.gems+=r;save();setTimeout(()=>banner('medal','انتهى موسم الدوري!','وصلت دوري '+n+' الشهر اللي فات، وجاتك '+r+' جوهرة.'),2500)}}else if(i>S.lgm.max)S.lgm.max=i}
+/* ---------- gold pass (premium season track, bought with gems) ---------- */
+const PASS_COST=250;const passRew=i=>i===SEAS_N-1?{gems:120}:i%3===2?{gems:10+i}:{g:600*cl()+i*250,w:600*cl()+i*250};
+function giveRew(r){if(r.gems)S.gems+=r.gems;if(r.g)S.gold=Math.min(capG(),S.gold+r.g);if(r.w)S.water=Math.min(capW(),S.water+r.w)}
+const rLab=r=>[r.gems?r.gems+art('gem'):'',r.g?fmt(r.g)+art('coin'):'',r.w?fmt(r.w)+art('drop'):''].filter(Boolean).join(' ');
+const _ps21=progSheet;progSheet=function(){lgmCheck();_ps21();if(progTab==='league'){const B=$('#sheetBody');B.insertAdjacentHTML('beforeend',`<p class="note">آخر كل شهر تاخذ مكافأة حسب أعلى دوري وصلته: ${LG.map((l,k)=>LGR[k]?l.n+' '+LGR[k]:'').filter(Boolean).join(' · ')} جوهرة.</p>`);return}
+  if(progTab!=='season')return;const B=$('#sheetBody');seasonCheck();const se=S.season;se.got2=se.got2||[];const tier=Math.floor(se.pts/SEAS_STEP);
+  const hero=B.querySelector('.lg-hero');if(hero)hero.insertAdjacentHTML('afterend',se.prem?`<div class="note" style="background:#ffe07a">✨ عندك التذكرة الذهبية لهالموسم: جوائز إضافية في كل مستوى.</div>`:
+    `<button class="btn y" id="passBuy" style="width:100%;margin:8px 0">✨ التذكرة الذهبية: جوائز إضافية في كل مستوى · ${PASS_COST}${art('gem')}</button>`);
+  B.querySelectorAll('[data-se]').forEach(btn=>{const i=+btn.dataset.se,r=passRew(i),got=se.got2.includes(i),can=se.prem&&i<tier&&!got;
+    btn.insertAdjacentHTML('beforebegin',`<button class="btn sm ${can?'y':''}" data-se2="${i}" ${can?'':'disabled'} title="التذكرة الذهبية" style="margin-inline-end:6px">${got?'✓':se.prem?(can?rLab(r):art('lock')):'✨'+art('lock')}</button>`)});
+  if(typeof paintArt==='function')paintArt(B);
+  const pb=$('#passBuy');if(pb)pb.onclick=()=>{if(S.gems<PASS_COST){toast('ما عندك جواهر كفاية');snd('bad');return}S.gems-=PASS_COST;se.prem=true;snd('win');hud();save();progSheet()};
+  B.querySelectorAll('[data-se2]').forEach(e=>e.onclick=()=>{const i=+e.dataset.se2;if(!se.prem||se.got2.includes(i)||i>=Math.floor(se.pts/SEAS_STEP))return;se.got2.push(i);giveRew(passRew(i));snd('win');hud();save();progSheet()})};
+/* ---------- spell: النفير (summons swordsmen) ---------- */
+SPL.nafir={n:'النفير',cost:200,r:1.6,dur:1.2,d:'ينادي 4 سيّافين من القبيلة ينزلون مكانها ويقاتلون معك.'};
+Object.assign(ART,{nafir:`<path d="M8 40l30-22 6 8-30 22z" fill="#d9a441"/><path d="M38 18l14-10 6 18-14 0z" fill="#f3c86a"/><path d="M14 48l-4 8M20 44l2 9" stroke-width="3"/>`});
+if(S.spells)S.spells.nafir=S.spells.nafir||0;
+const _sm21=spellMesh;spellMesh=function(k){if(k!=='nafir')return _sm21(k);const g=new THREE.Group();const m=add(g,new THREE.TorusGeometry(SPL.nafir.r,.08,8,32),M('#ffcb2b',{emissive:'#ff9a2b',emissiveIntensity:.8}));m.rotation.x=Math.PI/2;m.position.y=.08;const sp=new THREE.Group();g.add(sp);g.userData.spin=sp;return g};
+const _st21=spellTick;spellTick=function(dt){const B=BB;const nf=B.spells.filter(s=>s.k==='nafir');B.spells=B.spells.filter(s=>s.k!=='nafir');_st21(dt);
+  nf.forEach(s=>{s.t+=dt;if(!s.hit){s.hit=1;const mu=tMul('w');for(let i=0;i<4;i++){const a=i*Math.PI/2+.4;B.units.push({t:'w',x:s.x+Math.cos(a)*.6,y:s.y+Math.sin(a)*.6,hp:TR.w.hp*mu,maxhp:TR.w.hp*mu,dmg:TR.w.dmg*mu,cd:0,tgt:null,walk:0,moving:false,naf:1})}
+      if(!SIM){snd('win');fx.push({k:'txt',gx:s.x,gy:s.y,s:'النفير!',col:'#ffcb2b',t:0,dur:1.2})}}});
+  B.spells.push(...nf.filter(s=>s.t<SPL.nafir.dur));
+  /* mare gear: hero regenerates */
+  const lv=(S.gear&&S.gear.hr)|0;if(lv)B.units.forEach(u=>{if(u.t==='h'&&!u.dead&&u.hp<u.maxhp)u.hp=Math.min(u.maxhp,u.hp+u.maxhp*.004*lv*dt)})};
+/* ---------- hero gear ---------- */
+const GEAR=[{k:'sw',n:'سيف الفارس',d:'ضرر الفارس',p:4,ico:'swords',res:'g'},{k:'sh',n:'درع الفارس',d:'صحة الفارس',p:5,ico:'shield',res:'w'},{k:'hr',n:'فرس أصيلة',d:'تجديد صحة الفارس كل ثانية',p:.4,ico:'v_h',res:'g'}];
+S.gear=S.gear||{sw:0,sh:0,hr:0};
+const gearMax=()=>Math.min(10,cl()*2);const gearCost=l=>Math.round(1500*Math.pow(l+1,1.7));
+const gearM=k=>1+((S.gear&&S.gear[k])|0)*(k==='sw'?.04:.05);
+const _hs21=heroSheet;heroSheet=function(){_hs21();const B=$('#sheetBody');if(!B)return;
+  B.insertAdjacentHTML('beforeend',`<h4 style="margin:14px 0 6px">عدّة الفارس</h4>`+GEAR.map(g=>{const l=S.gear[g.k]|0,c=gearCost(l),mx=l>=gearMax(),have=(g.res==='g'?S.gold:S.water)>=c;
+    return `<div class="row"><div class="ri">${art(g.ico)}</div><div class="rt"><b>${g.n} · مستوى ${l}</b><small>${g.d} +${Math.round(l*g.p*10)/10}%${g.k==='hr'?'':''} · الحد ${gearMax()} (يزيد مع القلعة)</small></div><button class="btn sm ${!mx&&have?'g':''}" data-gr="${g.k}" ${!mx&&have?'':'disabled'}>${mx?'الحد':fmt(c)+art(g.res==='g'?'coin':'drop')}</button></div>`}).join(''));
+  if(typeof paintArt==='function')paintArt(B);
+  B.querySelectorAll('[data-gr]').forEach(e=>e.onclick=()=>{const g=GEAR.find(x=>x.k===e.dataset.gr),l=S.gear[g.k]|0,c=gearCost(l);if(l>=gearMax())return;if(g.res==='g'){if(S.gold<c)return;S.gold-=c}else{if(S.water<c)return;S.water-=c}
+    S.gear[g.k]=l+1;stat('upgrades');snd('win');hud();save();heroSheet()})};
+const _vsn21=vfSetupNow;vfSetupNow=function(){const o=_vsn21();o.gear={...S.gear};return o};
+const _vcs21=vfClampSetup;vfClampSetup=function(s,cmax){const o=_vcs21(s,cmax);const g=s.gear||{};const mx=Math.min(10,o.cl*2);o.gear={};['sw','sh','hr'].forEach(k=>o.gear[k]=Math.max(0,Math.min(mx,g[k]|0)));return o};
+const _vls21=vfLoadSetup;vfLoadSetup=function(st){_vls21(st);S.gear={sw:0,sh:0,hr:0,...(st.gear||{})}};
+/* ---------- practice attack on your own village ---------- */
+function practiceOwn(){if(!TROOPS.some(k=>S.army[k]>0)){toast('درّب جيش أول');snd('bad');return}closeSheet();
+  _ss13('base',{L:cl(),name:'قريتك'});if(!BB)return;
+  BB.bld=S.b.filter(b=>BT[b.t]&&!BT[b.t].decor&&!b.buried&&!b.up).map(b=>{const L=Math.max(1,b.lvl||1);const hp=(BT[b.t].hp||[1])[Math.min(L,(BT[b.t].hp||[1]).length)-1];return {t:b.t,x:b.x,y:b.y,lvl:L,hp,maxhp:hp,cd:0,lg:0,lw:0}});
+  BB.total=BB.bld.filter(b=>b.t!=='wall'&&b.t!=='trap').length;BB.availG=0;BB.availW=0;BB.noTro=1;BB.noLoot=1;BB.practice=1;addGuards(BB);computeBlocked();
+  if(typeof hitBuilding==='function'){}toast('هجوم تجريبي على قريتك: بدون غنيمة ولا كؤوس')}
+const _ls21=layoutSheet;layoutSheet=function(){_ls21();const B=$('#sheetBody');if(!B)return;B.insertAdjacentHTML('beforeend',`<button class="btn r" id="prOwn" style="width:100%;margin-top:12px">⚔️ جرّب تهجم على قريتك (تدريب)</button>`);$('#prOwn').onclick=()=>{snd('tap');practiceOwn()}};
+/* ---------- end of battle: tribe war/challenge results, 3-star stat, poet verse, share ---------- */
+const VERSES=['طاحت حصونك والصقور محلّقة ... والنصر لعيال النفود يزفّه','ما يرهب الفارس عجاج المعارك ... ولا تردّه عن مرامه سدود',
+  'يا ربعنا هذي الفزعة ومثلها ... تبقى سوالف للمجالس تعاد','سيوفنا لمعت ورمحنا علا ... والرمل يشهد كيف صار الغزو',
+  'خيلٍ تشق الريح وجموعٍ تهلّ ... واللي تحدّانا تعلّم درسه','من فوق ظهور الهجن جينا مثل سيل ... نكسر الباب ونرفع الراية',
+  'النصر ما يجي بالتمنّي وحده ... يجي بعزمٍ والرجال المواجيد','قلعةٍ عالية واليوم صارت ركام ... والعزّ باقي لاهل الطعس والعزم'];
+const _eb21=endBattle;endBattle=function(){const B=BB;const first=B&&!B.result&&!B.replay;if(first&&B.noLoot){B.gotG=0;B.gotW=0}_eb21();if(!first||B.kind==='defense')return;
+  const win=B.stars>0;if(B.stars===3)stat('stars3');
+  if(B.war!=null){const W=trbWar();const b=W&&W.bases[B.war];if(b&&B.stars>b.st){const d=B.stars-b.st;b.st=B.stars;trbAddMsg('أنت','جبت '+d+' ⭐ في الحرب على '+b.n,true)}save()}
+  if(B.chal){const T=trb();T.chal=T.chal||{};T.chal[B.chal]=Math.max(T.chal[B.chal]||0,B.stars);if(win)addXP(15);save()}
+  const md=$('#modal')||document.querySelector('.modal.on')||document.body;const st=md.querySelector('.big-stars');
+  if(B.noTro){const lt=md.querySelector('.loot');if(lt&&B.noLoot)lt.remove();const p=st&&st.nextElementSibling;if(p)p.insertAdjacentHTML('afterend',`<p class="note">${B.war!=null?'معركة حرب القبائل: النجوم تنحسب للقبيلة.':B.chal?'تحدّي ودّي داخل القبيلة.':'هجوم تجريبي على قريتك.'}</p>`)}
+  if(win&&st){const v=VERSES[Math.floor(Math.random()*VERSES.length)];st.insertAdjacentHTML('afterend',`<div style="margin:6px auto 4px;max-width:340px;background:#fff6df;border:2px solid var(--edge);border-radius:12px;padding:8px 10px;font-weight:800;line-height:1.7">${art('poem')}<div>${esc(v.split(' ... ')[0])}</div><div>${esc(v.split(' ... ')[1])}</div><small style="color:var(--muted)">— الشاعر</small></div>`)}
+  const mb=md.querySelector('.mb');if(mb&&win){mb.insertAdjacentHTML('afterbegin',`<button class="btn y" id="shrB">📤 شارك</button>`);$('#shrB').onclick=()=>{snd('tap');shareWin(B)}}
+  if(typeof paintArt==='function')paintArt(md)};
+async function shareWin(B){try{renderer.render(scene,camera);const src=renderer.domElement;const W=720,H=Math.round(W*src.height/src.width);const c=document.createElement('canvas');c.width=W;c.height=H+160;const g=c.getContext('2d');
+  g.fillStyle='#3a2414';g.fillRect(0,0,W,H+160);g.drawImage(src,0,0,W,H);g.fillStyle='#ffcb2b';g.font='900 54px sans-serif';g.textAlign='center';g.fillText('★'.repeat(B.stars)+'☆'.repeat(3-B.stars),W/2,H+62);
+  g.fillStyle='#fff';g.font='800 30px sans-serif';g.direction='rtl';g.fillText('دمّرت '+Math.floor(B.pct)+'% من '+(B.name||'القلعة')+' في قلاع النفود',W/2,H+110);g.font='700 22px sans-serif';g.fillStyle='#e8d3a8';g.fillText('rimalith.com/nufud',W/2,H+145);
+  const blob=await new Promise(r=>c.toBlob(r,'image/png'));const f=new File([blob],'nufud.png',{type:'image/png'});const text='فزت بـ '+B.stars+' نجوم في قلاع النفود 🏰 جرّبها: https://rimalith.com/nufud';
+  if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text});return}if(navigator.share){await navigator.share({text,url:'https://rimalith.com/nufud'});return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nufud.png';a.click();toast('انحفظت الصورة')}catch(e){if(e&&e.name!=='AbortError')toast('ما قدرنا نشارك')}}
+/* ---------- more Saudi events ---------- */
+SEASONS.unshift({id:'gergean',n:'القرقيعان',ico:'gift',test:(h,g)=>h.m===9&&h.d>=14&&h.d<=15,d:'ليلة القرقيعان: حلاوة ومكسرات وهدية للأطفال والكبار.',gift:{gems:15,g:1500}});
+SEASONS.push({id:'flag',n:'يوم العلم',ico:'raya',test:(h,g)=>g.getMonth()===2&&g.getDate()===11,d:'يوم العلم السعودي: الرايات الخضرا ترفرف فوق القلاع.',gift:{gems:20}},
+  {id:'camelfest',n:'مهرجان الإبل',ico:'hijin',test:(h,g)=>g.getMonth()===11&&g.getDate()<=15,d:'مهرجان الإبل: سباقات الهجن جوائزها مضاعفة، وهدية يومية.',gift:{gems:10,w:2000}});
+/* init */
+setTimeout(()=>{try{lgmCheck();dqCheck();trbTickChat();save()}catch(e){console.warn(e)}},1500);
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
