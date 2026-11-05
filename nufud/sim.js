@@ -2547,7 +2547,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='5649da1dd5fb';
+const NFBUILD='d0a87bd17efe';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -2880,7 +2880,7 @@ setTimeout(mdlLoad,300);
 /* ================= v2.1: Canva concept art lifted to 3D (castle + troops) ================= */
 const HQ={ready:{},src:{},mats:{},base:'https://gqognctjoniwcvmujfzo.supabase.co/storage/v1/object/public/m/'};
 /* game key -> [file, target height] ; units face +X in game, the lifted models face +Z */
-const HQU={a:['a',.92],k:['k',.92],g:['g',.95],guard:['g',.95],p:['w',.95],h:['h',1.6],camel:['camel',1.15]};
+const HQU={a:['a',.86],k:['k',.86],g:['g',.9],guard:['g',.9],p:['w',.9],h:['h',1.6],camel:['camel',1.15]};
 function hqMat(m,enemy){const k=m.uuid+(enemy?'e':'');if(HQ.mats[k])return HQ.mats[k];const map=m.map||null;if(map){map.encoding=THREE.sRGBEncoding;map.anisotropy=4}
   const n=new THREE.MeshStandardMaterial({map,color:enemy?'#cdb8f0':'#ffffff',roughness:.92,metalness:0,emissive:'#ffffff',emissiveMap:map,emissiveIntensity:.12});HQ.mats[k]=n;return n}
 function hqPrep(key,scene){const g=new THREE.Group();scene.updateMatrixWorld(true);
