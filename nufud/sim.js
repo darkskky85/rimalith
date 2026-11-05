@@ -2547,7 +2547,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='7939aed7352f';
+const NFBUILD='5649da1dd5fb';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -2882,7 +2882,7 @@ const HQ={ready:{},src:{},mats:{},base:'https://gqognctjoniwcvmujfzo.supabase.co
 /* game key -> [file, target height] ; units face +X in game, the lifted models face +Z */
 const HQU={a:['a',.92],k:['k',.92],g:['g',.95],guard:['g',.95],p:['w',.95],h:['h',1.6],camel:['camel',1.15]};
 function hqMat(m,enemy){const k=m.uuid+(enemy?'e':'');if(HQ.mats[k])return HQ.mats[k];const map=m.map||null;if(map){map.encoding=THREE.sRGBEncoding;map.anisotropy=4}
-  const n=new THREE.MeshStandardMaterial({map,color:enemy?'#cdb8f0':'#ffffff',roughness:.92,metalness:0,emissive:'#ffffff',emissiveMap:map,emissiveIntensity:.22});HQ.mats[k]=n;return n}
+  const n=new THREE.MeshStandardMaterial({map,color:enemy?'#cdb8f0':'#ffffff',roughness:.92,metalness:0,emissive:'#ffffff',emissiveMap:map,emissiveIntensity:.12});HQ.mats[k]=n;return n}
 function hqPrep(key,scene){const g=new THREE.Group();scene.updateMatrixWorld(true);
   scene.traverse(o=>{if(!o.isMesh)return;const geo=o.geometry.clone();geo.applyMatrix4(o.matrixWorld);if(!geo.attributes.normal)geo.computeVertexNormals();
     const m=new THREE.Mesh(geo,hqMat(o.material));m.castShadow=true;m.receiveShadow=true;g.add(m)});
@@ -2897,7 +2897,7 @@ let hqTO=0;function hqRefresh(f){clearTimeout(hqTO);hqTO=setTimeout(()=>{if(type
 /* castle: one lifted model, grows a little with each tier */
 const _bf19=buildFull;
 buildFull=function(t,L,o){o=o||{};if(t!=='castle'||!HQ.ready.castle)return _bf19(t,L,o);
-  const s=BT.castle.s,src=HQ.src.castle,sz=src.userData.size,tier=tierOf(Math.max(1,L));const k=(s*.98/Math.max(sz.x,sz.z))*[.86,.93,1][tier-1];
+  const s=BT.castle.s,src=HQ.src.castle,sz=src.userData.size,tier=tierOf(Math.max(1,L));const k=(s*.98/Math.max(sz.x,sz.z))*[.96,1.02,1.08][tier-1];
   const g=new THREE.Group();src.children.forEach(m=>{const c=new THREE.Mesh(m.geometry,m.material);c.castShadow=true;c.receiveShadow=true;c.scale.setScalar(k);g.add(c)});
   TOPH.castle=sz.y*k+.2;if(o.up)scaffold(g,s);if(o.buried)mound(g,s);return g};
 /* troops */
