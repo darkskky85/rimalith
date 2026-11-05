@@ -633,7 +633,7 @@ const art=id=>ART[id]?`<svg class="art" viewBox="0 0 64 64" aria-hidden="true"><
 const paintArt=root=>root.querySelectorAll('[data-art]').forEach(el=>{el.innerHTML=art(el.dataset.art)});
 
 /* ================= DATA ================= */
-const N=22,TW=60,TH=30,MAXL=8,HOMEN='مضارب العفاسي';
+const N=22,TW=60,TH=30,MAXL=8,HOMEN='مضارب الشفق';
 const BT={
  castle:{n:'القلعة',s:3,hp:[1500,2200,3000,4000,5200],cost:[0,1500,5000,15000,40000],res:'g',time:[0,40,120,300,600],max:1,d:'قلب قلعتك. ترقيتها تفتح مباني ومستويات جديدة.'},
  goldmine:{n:'منجم ذهب',s:2,hp:[400,500,650,800,1000],cost:[150,500,1500,4000,10000],res:'w',time:[5,25,70,180,400],rate:[0.8,1.4,2.2,3.2,4.5],cap:[300,800,1800,3500,6000],d:'يطلّع ذهب مع الوقت. اضغط عليه عشان تجمع.'},
@@ -655,7 +655,7 @@ const TR={
  c:{n:'هجّان',hp:260,dmg:18,range:.8,speed:2,space:4,cost:120,time:10,bl:2,d:'سريع، يتّجه للمناجم والآبار والخزائن أول.',col:'#2f8ee8',pref:['goldmine','well','goldstore','waterstore']},
  k:{n:'هدّام',hp:30,dmg:40,range:.6,speed:1.6,space:2,cost:80,time:6,bl:3,d:'يركض للجدران ويفجّرها. ينفجر مرة وحدة.',col:'#77706b',pref:['wall']}
 };
-const ENEMY_NAMES=['قلعة أبو سعد','حصن الجوف','قلعة ذيب','مضارب العتيبي','حصن الريم','قلعة الصقر الأسود','حصن سدير','قلعة هيلة','مضارب شمّر','قلعة الدهناء','حصن تبوك','قلعة النخيل'];
+const ENEMY_NAMES=['قلعة أبو سعد','حصن الجوف','قلعة ذيب','مضارب الغضا','حصن الريم','قلعة الصقر الأسود','حصن سدير','قلعة هيلة','مضارب السراب','قلعة الدهناء','حصن تبوك','قلعة النخيل'];
 const TRIBE_MEMBERS=['أبو ناصر','سلطان','نورة','بدر','العنود','تركي'];
 BT.stable={n:'مربط الفرس',s:2,hp:[700,800,900,1000,1100],cost:[0,0,0,0,0],res:'g',time:[0,0,0,0,0],d:'بيت الفارس. اضغط عليه عشان تطوّره.'};
 LIM.stable=[1,1,1,1,1];
@@ -668,7 +668,7 @@ const tMul=k=>1+.18*((S.tlv[k]||1)-1);
 const tCost=k=>Math.round(400*Math.pow(S.tlv[k]||1,1.8)*(k==='c'?1.6:k==='k'?1.3:1));
 const spellCap=()=>cl()>=3?3:2;
 const spellCount=()=>Object.values(S.spells).reduce((a,b)=>a+b,0);
-const CAMP=[['مضارب الذيب',1,1200,1000],['بئر الحيرة',1,1500,1300],['حصن الرمال',2,2200,2000],['قلعة الوادي',2,2600,2400],['مضارب شمّر',2,3000,2800],['حصن العقيق',3,4200,3800],['قصر طويق',3,5000,4500],['قلعة السراب',3,6000,5500],['حصن الدهناء',4,8000,7500],['قلعة النفود الكبرى',4,10000,9000],['حصن الربع الخالي',5,14000,12000],['عرين الصقر الأسود',5,20000,18000]].map(([n,L,g,w],i)=>({n,L,g,w,seed:1000+i*77}));
+const CAMP=[['مضارب الذيب',1,1200,1000],['بئر الحيرة',1,1500,1300],['حصن الرمال',2,2200,2000],['قلعة الوادي',2,2600,2400],['مضارب السراب',2,3000,2800],['حصن العقيق',3,4200,3800],['قصر طويق',3,5000,4500],['قلعة السراب',3,6000,5500],['حصن الدهناء',4,8000,7500],['قلعة النفود الكبرى',4,10000,9000],['حصن الربع الخالي',5,14000,12000],['عرين الصقر الأسود',5,20000,18000]].map(([n,L,g,w],i)=>({n,L,g,w,seed:1000+i*77}));
 const QUESTS=[
  {id:'q1',t:'جمّع 500 ذهب من المناجم',v:()=>S.st.collectG||0,n:500,gems:5},
  {id:'q2',t:'درّب 10 جنود',v:()=>S.st.trained||0,n:10,gems:5},
@@ -1381,7 +1381,7 @@ function startScout(kind,o){o=o||{};
   closeMap(true);closeSheet();closeModal();selB=null;selO=null;showSel();
   const L=o.L||Math.max(1,Math.min(MAXL,cl()+ri(-1,1)));
   const fal=S.b.find(b=>b.t==='falcon'&&!b.buried);
-  BB={kind,L,camp:o.camp,clock:0,spells:[],sp:{...S.spells},spInit:{...S.spells},heroOut:false,nakhwa:false,raiders:[],name:o.name||(kind==='base'?pick(ENEMY_NAMES):'قافلة '+pick(['تجار الشام','بني تميم','أهل الأحساء','العقيلات','حجاج اليمن'])),bld:[],units:[],en:[],proj:[],time:180,started:false,ended:false,
+  BB={kind,L,camp:o.camp,clock:0,spells:[],sp:{...S.spells},spInit:{...S.spells},heroOut:false,nakhwa:false,raiders:[],name:o.name||(kind==='base'?pick(ENEMY_NAMES):'قافلة '+pick(['تجار الشام','تجار الدهناء','أهل الأحساء','ركب الغروب','حجاج اليمن'])),bld:[],units:[],en:[],proj:[],time:180,started:false,ended:false,
     left:{...S.army},init:{...S.army},sel:null,revealUntil:0,falcon:fal?BT.falcon.scout[fal.lvl-1]:0,gotG:0,gotW:0,stars:0,pct:0,dep:0,destroyedCastle:false};
   if(kind==='base'){BB.bld=genBase(L);addGuards(BB);BB.availG=o.g||ri(800,1500)*L;BB.availW=o.w||ri(800,1500)*L;
     const lootable=BB.bld.filter(b=>['goldstore','waterstore','goldmine','well','castle'].includes(b.t));
@@ -3103,7 +3103,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='ff6302c037ad';
+const NFBUILD='11f7e8e9c42d';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
