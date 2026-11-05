@@ -3030,7 +3030,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='c9437d82aa0d';
+const NFBUILD='d5e75aa27da2';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3175,7 +3175,7 @@ function chatSheet(room,title){if(!needOnline())return;stopChat();CH.room=room;C
     <div id="chatList" style="height:min(46vh,380px);overflow-y:auto;background:#fff6df;border:3px solid var(--edge);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px"></div>
     <div style="display:flex;gap:8px;margin-top:10px"><input id="chatIn" maxlength="200" placeholder="اكتب رسالة…" style="flex:1;min-width:0;font:700 16px var(--display,sans-serif);padding:10px 12px;border:3px solid var(--edge);border-radius:14px;direction:rtl">
     <button class="btn g" id="chatSend" style="flex:0 0 auto">إرسال</button></div>
-    <p class="note" style="margin-top:10px">خلك محترم. اضغط على اسم أي لاعب عشان تكتمه.</p>`);
+    <p class="note" style="margin-top:10px">خلك محترم. اضغط على أي رسالة عشان تبلّغ عنها أو تكتم صاحبها. الكلام البذيء ينحجب تلقائياً.</p>`);
   const inp=$('#chatIn');const send=async()=>{const v=inp.value.trim();if(!v)return;inp.value='';try{await rpc('nf_chat_send',{p_id:S.ol.id,p_secret:S.ol.sec,p_room:room,p_body:v});snd('tap');chatPull()}catch(e){toast(/slow/.test(String(e))?'شوي شوي على الرسايل':'ما انرسلت');inp.value=v}};
   $('#chatSend').onclick=send;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();send()}};
   chatPull();CH.timer=setInterval(()=>{if(!$('#chatList')||!$('#sheet').classList.contains('on')){stopChat();return}if(!document.hidden)chatPull()},4000)}
