@@ -3103,7 +3103,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='fd1a975740d8';
+const NFBUILD='7939aed7352f';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3381,7 +3381,7 @@ const MDEF={mud:['#eed6b4','mud',.92,0],mud2:['#d1b899','mud',.95,0],white:['#f6
   team:['#ffffff','cloth',.85,0],team2:['#ffffff','cloth',.85,0],skin:['#f2b885',null,.7,0],skin2:['#c78c5c',null,.7,0],thobe:['#f7f5ee','cloth',.85,0],agal:['#100d0d',null,.6,0],
   eye:['#080808',null,.3,0],beard:['#1f140f',null,.9,0],horse:['#6b381f',null,.55,0],horsed:['#1a120d',null,.7,0],camelc:['#d6a366',null,.8,0],camelc2:['#bd8a52',null,.8,0],
   steel:['#dbe3ed',null,.25,.9],leather:['#5c381f',null,.7,0],bisht:['#33211a','cloth',.8,0],goat1:['#f2ebdc',null,.9,0],goat2:['#3d2b21',null,.9,0],horn:['#d9c799',null,.6,0],
-  glow:['#80ff8c',null,.5,0,'#2a9a3a'],cloth:['#f2eee0','cloth',.85,0]};
+  glow:['#80ff8c',null,.5,0,'#2a9a3a'],cloth:['#f2eee0','cloth',.85,0],sandb:['#ffffff','sandb',.98,0],shemagh:['#ffffff','shemagh',.85,0],maroon:['#8a1a1f','cloth',.85,0],bush:['#5c8c33',null,.85,0],bush2:['#80a038',null,.85,0],trunk:['#80603a','wood',.9,0]};
 function mdlTex(n,normal){const k=n+(normal?'_n':'');if(MDL.tex[k])return MDL.tex[k];const t=new THREE.TextureLoader().load('tex/'+k+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;
   t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(!normal)t.encoding=THREE.sRGBEncoding;MDL.tex[k]=t;return t}
 function mdlMat(name,tint){const key=name+(tint||'');if(MDL.mats[key])return MDL.mats[key];const d=MDEF[name]||['#ffffff',null,.85,0];
@@ -3391,7 +3391,7 @@ const baseName=n=>String(n||'').replace(/\.\d+$/,'');
 function mdlClone(src,tints){const c=src.clone(true);c.traverse(o=>{if(o.isMesh){const mn=baseName(o.material&&o.material.name).replace(/^M_/,'');o.material=mdlMat(mn,tints&&tints[mn]);o.geometry=o.geometry.clone()}});return c}
 function mdlLoad(){if(MDL.loading||!THREE.GLTFLoader)return;MDL.loading=true;
   const L=new THREE.GLTFLoader();if(THREE.DRACOLoader){const d=new THREE.DRACOLoader();d.setDecoderPath('draco/');d.setDecoderConfig({type:'wasm'});L.setDRACOLoader(d)}
-  const get=f=>new Promise((res,rej)=>L.load('models/'+f+'?v=2',g=>res(g),undefined,rej));
+  const get=f=>new Promise((res,rej)=>L.load('models/'+f+'?v=3',g=>res(g),undefined,rej));
   Promise.all([get('buildings.glb'),get('units.glb')]).then(([b,u])=>{const idx=s=>{const m={};s.scene.children.forEach(c=>m[baseName(c.name)]=c);return m};
     MDL.b=idx(b);MDL.u=idx(u);MDL.ready=true;meshOf.forEach(e=>{e.key+='~'});animalsRefresh();if(typeof upgradeGround2==='function')upgradeGround2()}).catch(e=>{console.warn('models',e)})}
 const tierOf=L=>L<=2?1:L<=5?2:3;
@@ -3432,6 +3432,43 @@ function upgradeGround2(){scene.traverse(o=>{if(!o.isMesh||!o.material)return;co
   else if(o.geometry&&o.geometry.parameters&&o.geometry.parameters.width===280){const t=gTex('sand',56);const nn=gTex('sand_n',56);
     o.material=new THREE.MeshStandardMaterial({color:'#d2a57e',map:t,normalMap:nn,normalScale:new THREE.Vector2(.8,.8),roughness:1,vertexColors:!!o.geometry.attributes.color})}})}
 setTimeout(mdlLoad,300);
+
+/* ================= v2.1: Canva concept art lifted to 3D (castle + troops) ================= */
+const HQ={ready:{},src:{},mats:{},base:'https://gqognctjoniwcvmujfzo.supabase.co/storage/v1/object/public/m/'};
+/* game key -> [file, target height] ; units face +X in game, the lifted models face +Z */
+const HQU={a:['a',.92],k:['k',.92],g:['g',.95],guard:['g',.95],p:['w',.95],h:['h',1.6],camel:['camel',1.15]};
+function hqMat(m,enemy){const k=m.uuid+(enemy?'e':'');if(HQ.mats[k])return HQ.mats[k];const map=m.map||null;if(map){map.encoding=THREE.sRGBEncoding;map.anisotropy=4}
+  const n=new THREE.MeshStandardMaterial({map,color:enemy?'#cdb8f0':'#ffffff',roughness:.92,metalness:0,emissive:'#ffffff',emissiveMap:map,emissiveIntensity:.22});HQ.mats[k]=n;return n}
+function hqPrep(key,scene){const g=new THREE.Group();scene.updateMatrixWorld(true);
+  scene.traverse(o=>{if(!o.isMesh)return;const geo=o.geometry.clone();geo.applyMatrix4(o.matrixWorld);if(!geo.attributes.normal)geo.computeVertexNormals();
+    const m=new THREE.Mesh(geo,hqMat(o.material));m.castShadow=true;m.receiveShadow=true;g.add(m)});
+  const b=new THREE.Box3().setFromObject(g),c=b.getCenter(new THREE.Vector3());g.children.forEach(m=>m.geometry.translate(-c.x,-b.min.y,-c.z));
+  g.userData.size=b.getSize(new THREE.Vector3());return g}
+function hqLoad(){if(HQ.loading||!THREE.GLTFLoader)return;HQ.loading=true;const L=new THREE.GLTFLoader();
+  ['castle','a','k','g','w','h','camel'].forEach(f=>L.load(HQ.base+f+'.glb?v=1',gl=>{HQ.src[f]=hqPrep(f,gl.scene);HQ.ready[f]=1;hqRefresh(f)},undefined,e=>console.warn('hq',f,e)))}
+function hqClone(f,h,enemy){const s=HQ.src[f];if(!s)return null;const g=new THREE.Group();const k=h/s.userData.size.y;
+  s.children.forEach(m=>{const c=new THREE.Mesh(m.geometry,enemy?hqMat(m.material,true):m.material);c.castShadow=true;c.receiveShadow=true;g.add(c)});
+  g.scale.setScalar(k);return g}
+let hqTO=0;function hqRefresh(f){clearTimeout(hqTO);hqTO=setTimeout(()=>{if(typeof meshOf!=='undefined')meshOf.forEach(e=>{e.key+='^'});if(typeof animalsRefresh==='function')animalsRefresh()},120)}
+/* castle: one lifted model, grows a little with each tier */
+const _bf19=buildFull;
+buildFull=function(t,L,o){o=o||{};if(t!=='castle'||!HQ.ready.castle)return _bf19(t,L,o);
+  const s=BT.castle.s,src=HQ.src.castle,sz=src.userData.size,tier=tierOf(Math.max(1,L));const k=(s*.98/Math.max(sz.x,sz.z))*[.86,.93,1][tier-1];
+  const g=new THREE.Group();src.children.forEach(m=>{const c=new THREE.Mesh(m.geometry,m.material);c.castShadow=true;c.receiveShadow=true;c.scale.setScalar(k);g.add(c)});
+  TOPH.castle=sz.y*k+.2;if(o.up)scaffold(g,s);if(o.buried)mound(g,s);return g};
+/* troops */
+const _um19=unitMesh;
+unitMesh=function(t,enemy,boxc){const root=_um19(t,enemy,boxc);if(t==='f')return root;const ent=t==='c'?['camel',1.15]:HQU[t];if(!ent||!HQ.ready[ent[0]])return root;
+  const g=root.children[0];if(!g||!g.isGroup)return root;for(let i=g.children.length-1;i>=0;i--)g.remove(g.children[i]);
+  const en=!!enemy||t==='guard';const body=hqClone(ent[0],ent[1],en);if(!body)return root;body.rotation.y=Math.PI/2;
+  const rig=new THREE.Group();rig.add(body);g.add(rig);
+  if(t==='c'&&HQ.ready.w){const r=hqClone('w',.72,en);r.rotation.y=Math.PI/2;r.position.set(-.05,.62,0);rig.add(r)}
+  if(t==='p'||t==='r')root.scale.setScalar(1);
+  const ud=root.userData;ud.legs=null;ud.arm=null;ud.cape=null;ud.hq=rig;return root};
+const _pu19=posUnit;
+posUnit=function(m,u,t,face){_pu19(m,u,t,face);const r=m.userData.hq;if(!r)return;const w=(u.walk||0)*10,mv=u.moving;
+  r.rotation.x=mv?Math.sin(w)*.13:0;r.rotation.z=(!mv&&face)?-Math.max(0,Math.sin(t*9))*.28:(mv?-.06:0)};
+setTimeout(hqLoad,600);
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
