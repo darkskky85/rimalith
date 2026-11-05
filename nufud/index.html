@@ -392,6 +392,17 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .mhead.win h3{animation:winb 1.2s ease-in-out infinite}@keyframes winb{50%{transform:scale(1.06)}}
 .seg{display:flex;gap:4px}.seg button{padding:3px 12px 5px;border-radius:10px;background:#fff;border:2.5px solid var(--edge);font-family:var(--display);font-size:15px;box-shadow:0 2px 0 var(--edge)}.seg button.on{background:linear-gradient(180deg,#ffe07a,#ffc21f)}
 .tcard.aim{background:linear-gradient(180deg,#ffd0c4,#ff8a6a)}
+
+.side>*:not(#bMenu){display:none!important}
+#bMenu .burger{display:flex;flex-direction:column;gap:5px;width:26px}#bMenu .burger i{display:block;height:4px;border-radius:3px;background:#3a2410}
+.res.pills{flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;max-width:172px;gap:6px}
+.res.pills #evPill{display:none}
+.res.pills .pill{font-size:12px;padding:1px 8px 2px}
+.dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.dtile{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 8px;border-radius:16px;background:linear-gradient(180deg,#fff6df,#ead4a4);border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge);font-family:var(--display);font-size:14px;line-height:1.1;text-align:center}
+.dtile .art{width:40px;height:40px}.dtile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--edge)}
+.dtile small{font-family:var(--body);font-size:10.5px;font-weight:800;color:var(--muted);line-height:1.2}
+@media (max-width:360px){.dgrid{grid-template-columns:repeat(3,1fr)}}
 </style>
 
 </head>
@@ -426,7 +437,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
         <div class="chip gem"><span class="ico" data-art="gem"></span><b id="hGem">0</b></div>
       </div>
       <div class="sp"></div>
-      <div class="res" style="align-items:flex-end">
+      <div class="res pills" style="align-items:flex-end">
         <div class="pill lvl"><span data-art="star"></span><span id="hLv">1</span><i class="xpbar"><u id="hXp"></u></i></div>
         <div class="pill" id="lgPill"><span id="hLgI"></span><span id="hTro">0</span></div>
         <div class="pill"><span data-art="hammer"></span><span id="hBld">0/2</span></div>
@@ -434,6 +445,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
         <div class="pill ev" id="evPill"></div>
       </div>
       <div class="side">
+        <button class="ibtn" id="bMenu" aria-label="القائمة"><span class="burger"><i></i><i></i><i></i></span><small>القائمة</small></button>
         <button class="ibtn" id="bTribe" aria-label="القبيلة"><span data-art="tent"></span><small>القبيلة</small></button>
         <button class="ibtn" id="bArmy" aria-label="الجيش" style="margin-top:12px"><span data-art="v_w"></span><small>جيشي</small></button>
         <button class="ibtn" id="bQuest" aria-label="المهام" style="margin-top:12px"><span data-art="scroll"></span><small>المهام</small></button>
@@ -1147,7 +1159,7 @@ function hud(){
   $('#hLv').textContent=S.plv;$('#hXp').style.width=Math.min(100,S.xp/xpNeed(S.plv)*100)+'%';
   $('#bQuest').classList.toggle('badge',QUESTS.some(q=>!S.claimed.includes(q.id)&&q.v()>=q.n));$('#bDaily').classList.toggle('badge',dailyAvail());
   const rb=$('#raidBtn');if(S.raid.pend){rb.hidden=false;$('#raidT').textContent=fmtT((S.raid.pend-now())/1000)}else rb.hidden=true;
-  hud4();hud5();
+  hud4();hud5();hud7();
 }
 
 /* selection panel */
@@ -1784,7 +1796,7 @@ function TUT_MAIN(){return [
  {say:'شايف منجم الذهب؟ يطلّع ذهب مع الوقت. اضغط عليه وجمّع اللي فيه.',start:()=>{closeSheet();closeModal();const m=S.b.find(b=>b.t==='goldmine'&&!b.buried);if(m){m.stock=Math.max(m.stock,Math.min(BT.goldmine.cap[m.lvl-1],250));if(S.gold>capG()-300)S.gold=Math.max(0,capG()-300);centerOn(m.x+1,m.y+1,cam.z)}},base:()=>S.st.collectG||0,done:b=>(S.st.collectG||0)>b,at:tBld('goldmine')},
  {say:'حلو! الذهب والموية تبني فيها وتطوّر. اضغط «بناء».',at:tEl('#bShop'),done:()=>sheetIs('بناء')},
  {say:'اختار «منجم ذهب»، حطه بمكان فاضي، واضغط ✓ عشان تثبّته.',pos:'top',start:()=>{shopTab='موارد';if(sheetIs('بناء'))shopSheet();S.water=Math.max(S.water,400)},base:()=>S.st.upgrades||0,done:b=>(S.st.upgrades||0)>b,at:()=>place?tEl('#pOk')():tEl('[data-t="goldmine"]')()},
- {say:'ممتاز! البنّاء شغال عليه. الحين نجهّز الجيش: افتح «جيشي».',at:tEl('#bArmy'),done:()=>sheetIs('الجيش')},
+ {say:'ممتاز! البنّاء شغال عليه. الحين نجهّز الجيش: افتح «القائمة» واختار «جيشي».',at:()=>sheetIs('القائمة')?tEl('[data-dt="army"]')():tEl('#bMenu')(),done:()=>sheetIs('الجيش')},
  {say:'درّب جنديين «سيّاف». كل جندي ياخذ موية ووقت تدريب.',pos:'top',start:()=>{while(armySpace()+2>house()&&S.army.w>0)S.army.w--;S.water=Math.max(S.water,200);if(sheetIs('الجيش'))trainSheet()},base:()=>S.st.trained||0,done:b=>(S.st.trained||0)>=b+2,at:tEl('[data-tr="w"]')},
  {say:'جيشك جاهز. سكّر النافذة واضغط «الخريطة» عشان تشوف النفود.',at:()=>$('#sheet').classList.contains('on')?tEl('#shX')():tEl('#bAtk')(),done:()=>mode==='map'},
  {say:'هذي خريطة النفود! فيها مراحل الحملة، وقرى القبائل، والقافلة، وكنوز الواحات. اضغط على أول مرحلة.',pos:'top',at:tEl('[data-node="c0"] .mn-b'),done:()=>mapSel==='c0'},
@@ -1795,9 +1807,9 @@ function TUT_MAIN(){return [
  {say:'هذا هو! كمّل الحملة عشان تفك فصول القصة، واهزم القبائل عشان ترفع كؤوسك ودوريّك. الشرح موجود في الإعدادات لو احتجته.'}]}
 function TUT_TOUR(){return [
  {say:'هلا فيك من جديد يا فارس! نزل تحديث كبير: خريطة النفود، قصة، جنود ومباني جديدة، ودوريات ومواسم.'},
- {say:'وجديد بعد: الصقر الجارح يطير، ومنصة الرماح تصيده، وفزعة القبيلة تدافع معك، وتقدر تشوف إعادة كل غارة من زر «الدفاع». وكل أسبوع فيه فعالية جديدة.',at:tEl('#evPill')},
+ {say:'وجديد بعد: الصقر الجارح يطير، ومنصة الرماح تصيده، وفزعة القبيلة تدافع معك، وتقدر تشوف إعادة كل غارة من زر «الدفاع». وكل أسبوع فيه فعالية جديدة.',at:tEl('#bMenu')},
  {say:'من «الخريطة» تلقى الحملة بفصولها، وقرى قبائل تغزوها، والقافلة، وكنوز الواحات.',at:tEl('#bAtk')},
- {say:'ومن «التقدّم» تتابع دوريّك وإنجازاتك وجوائز الموسم.',at:tEl('#bProg')},
+ {say:'ومن «القائمة» ثم «التقدّم» تتابع دوريّك وإنجازاتك وجوائز الموسم.',at:tEl('#bMenu')},
  {say:'وفي المعسكر صار عندك «العطّار» و«الحامي»، وفي البناء «برج النار» و«السوق». يلا وريني شغلك!'}]}
 function runTut(steps,onDone){TUT={steps,i:-1,onDone};TUTEL.hidden=false;nextTut()}
 function nextTut(){if(!TUT)return;TUT.i++;const st=TUT.steps[TUT.i];if(!st){endTut(true);return}try{st.start&&st.start()}catch(e){}
@@ -2358,6 +2370,16 @@ applyInputs=function(B){while(B.inputs.length&&B.inputs[0].tk<=B.tick){const a=B
   else if(a.k==='a')aimAt(a.x,a.y,false);
   else if(a.k==='s')B.spells.push({k:a.s,x:a.x,y:a.y,t:0});
   else if(a.k==='n'){const h=B.units.find(u=>u.hero&&!u.dead);if(h){B.nakhwa=true;h.hp=Math.min(h.maxhp,h.hp+h.maxhp*.4);B.units.forEach(u=>{if(!u.dead&&Math.hypot(u.x-h.x,u.y-h.y)<4.5)u.rage=B.clock+8});fx.push({k:'ring',gx:h.x,gy:h.y,t:0,dur:.6})}}}};
+
+
+/* --- v0.7: compact HUD menu --- */
+const DTILES=[['tribe','#bTribe','tent','القبيلة','الفزعة والبئر'],['army','#bArmy','v_w','جيشي','تدريب وتعاويذ'],['quest','#bQuest','scroll','المهام','جوائز جواهر'],['daily','#bDaily','gift','هدية اليوم',''],['prog','#bProg','medal','التقدّم','دوري وإنجازات'],['ev','#evPill','coin','الفعالية',''],['log','#bLog','shield','الدفاع','إعادة الغارات'],['set','#bSet','gear','الإعدادات','']];
+function menuSheet(){const tiles=DTILES.map(([k,sel,ic,n,sub])=>{const el=$(sel);const bd=el&&el.classList.contains('badge');let s2=sub;if(k==='ev'){const e=curEv();ic=e.ico;s2=e.n}if(k==='daily')s2=dailyAvail()?'جاهزة!':'بكرة';
+    return `<button class="dtile ${bd?'badge':''}" data-dt="${k}">${art(ic)}<span>${n}</span>${s2?`<small>${s2}</small>`:''}</button>`}).join('');
+  openSheet('القائمة',`<div class="dgrid">${tiles}</div>`);
+  $('#sheetBody').querySelectorAll('[data-dt]').forEach(b=>b.onclick=()=>{const t=DTILES.find(x=>x[0]===b.dataset.dt);closeSheet();setTimeout(()=>{const el=$(t[1]);if(el)el.click()},60)})}
+$('#bMenu').onclick=()=>{snd('tap');selB=null;selO=null;showSel();menuSheet()};
+function hud7(){const any=['#bQuest','#bDaily','#bProg','#bLog','#evPill'].some(q=>{const e=$(q);return e&&e.classList.contains('badge')});$('#bMenu').classList.toggle('badge',any)}
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
