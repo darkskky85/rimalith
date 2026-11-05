@@ -445,7 +445,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
       <button class="btn y" id="mSet">الإعدادات</button>
     </div>
     <div class="credit">تصميم وتطوير <b>فهد العفاسي</b></div>
-    <div class="ver">نسخة تجريبية 1.0 · رمليث</div>
+    <div class="ver">نسخة تجريبية 1.1 · رمليث</div>
   </section>
 
   <!-- VILLAGE HUD -->
@@ -1438,7 +1438,7 @@ function endBattle(){
   if(B.kind==='defense'){const win=!B.surrender&&!B.destroyedCastle&&B.pct<50;let g,w,tr;
     if(win){g=Math.max(0,Math.min(350*B.L+Math.floor(B.gotG),capG()-S.gold));w=Math.max(0,Math.min(350*B.L,capW()-S.water));S.gold+=g;S.water+=w;tr=ri(8,14);stat('defWins');addXP(30)}
     else{g=-Math.floor(S.gold*.12);w=-Math.floor(S.water*.12);S.gold+=g;S.water+=w;tr=-ri(6,10)}
-    S.tro=Math.max(0,S.tro+tr);snd(win?'win':'lose');musTo(win?'victory':'defeat');B.units.forEach(u=>{if(u.dfd&&!u.dead)S.army[u.t]=(S.army[u.t]||0)+1});
+    S.tro=Math.max(0,S.tro+tr);olEv('def',tr);snd(win?'win':'lose');musTo(win?'victory':'defeat');B.units.forEach(u=>{if(u.dfd&&!u.dead)S.army[u.t]=(S.army[u.t]||0)+1});
     if(B.rec){Object.assign(B.rec,{pct:Math.floor(B.pct),win,lg:Math.max(0,-g),lw:Math.max(0,-w),tr,castle:B.destroyedCastle,seen:true});S.raidLog.unshift(B.rec);S.raidLog=S.raidLog.slice(0,6);S.fz.list=B.units.filter(u=>u.fz&&!u.dead).map(u=>u.t)}
     const sg=v=>'<bdi>'+(v>0?'+':v<0?'-':'')+fmt(Math.abs(v))+'</bdi>';
     openModal(`<div class="mhead ${win?'win':'lose'}"><h3>${win?'صدّيت الغزاة!':'الغزاة اخترقوا قلعتك'}</h3></div><div class="mi">${art(win?'shield':'swords')}</div>
@@ -1449,7 +1449,7 @@ function endBattle(){
   const g=Math.max(0,Math.min(Math.floor(B.gotG),capG()-S.gold)),w=Math.max(0,Math.min(Math.floor(B.gotW),capW()-S.water));S.gold+=g;S.water+=w;
   const win=B.stars>0;let tr=0,bonus=0,extra='';
   if(B.camp!=null){const i=B.camp,prev=S.camp.stars[i]||0;S.camp.stars[i]=Math.max(prev,B.stars);if(prev===0&&B.stars>0)bonus+=5;if(prev<3&&B.stars===3)bonus+=10;if(bonus){S.gems+=bonus;extra=`<p class="note">مكافأة الحملة: ${bonus} ${art('gem')}</p>`}}
-  else{tr=win?Math.round((B.stars*8+ri(0,4))*(evOn('war')?1.5:1)):-ri(6,12);S.tro=Math.max(0,S.tro+tr)}
+  else{tr=win?Math.round((B.stars*8+ri(0,4))*(evOn('war')?1.5:1)):-ri(6,12);S.tro=Math.max(0,S.tro+tr);olEv('atk',tr,B.stars)}
   if(win){stat('wins');addXP(10+B.stars*8)}
   if(B.kind==='caravan')stat('camels',B.killed||0);
   snd(win?'win':'lose');musTo(win?'victory':'defeat');
@@ -1578,7 +1578,7 @@ function spawnWave(w,i){const B=BB;const m=1+.15*(B.L-1);
   bigText(['الموجة الأولى!','الموجة الثانية!','الموجة الأخيرة!'][i]);snd('bad');updateBattleTop()}
 function autoRaid(){S.raid.pend=0;S.raid.next=now()+ri(300,420)*1000;
   const def=S.b.filter(b=>(b.t==='archer'||b.t==='catapult')&&!b.buried).reduce((s,b)=>s+b.lvl,0);const r=Math.max(.04,.2-def*.02);
-  const lg=Math.floor(S.gold*r),lw=Math.floor(S.water*r);S.gold-=lg;S.water-=lw;S.tro=Math.max(0,S.tro-ri(4,8));
+  const lg=Math.floor(S.gold*r),lw=Math.floor(S.water*r);S.gold-=lg;S.water-=lw;{const rt=ri(4,8);S.tro=Math.max(0,S.tro-rt);olEv('raid',-rt)}
   openModal(`<div class="mhead lose"><h3>الغزاة دخلوا!</h3></div><p>ما دافعت بنفسك، فدفاعاتك واجهتهم لحالها ونهبوا:</p><div class="loot"><span>${art('coin')}<bdi>-${fmt(lg)}</bdi></span><span>${art('drop')}<bdi>-${fmt(lw)}</bdi></span></div><p class="note">المرة الجاية اضغط "دافع" لما يجيك التنبيه، وانزل بالفارس والتعاويذ.</p><div class="mb"><button class="btn g" id="oOk">طيب</button></div>`);
   $('#oOk').onclick=closeModal;hud();save()}
 
@@ -2157,7 +2157,7 @@ function simDefense(rec){const BB0=BB,m0=mode,fx0=fx.slice();SIM=true;let B;
   return {pct:B.pct,castle:B.destroyedCastle,win:!B.destroyedCastle&&B.pct<50,fzLeft:B.units.filter(u=>u.fz&&!u.dead).map(u=>u.t),heroDead:B.units.some(u=>u.hero&&u.dead),gotG:B.gotG}}
 function applyAutoRaid(rec,res){const def=res.win;let lg,lw,tr;
   if(def){lg=0;lw=0;tr=ri(5,9)}else{const f=.04+res.pct/100*.16;lg=Math.floor(S.gold*f);lw=Math.floor(S.water*f);tr=-ri(6,10)}
-  S.gold-=lg;S.water-=lw;S.tro=Math.max(0,S.tro+tr);S.fz.list=res.fzLeft;if(def)stat('defWins');
+  S.gold-=lg;S.water-=lw;S.tro=Math.max(0,S.tro+tr);olEv('auto',tr);S.fz.list=res.fzLeft;if(def)stat('defWins');
   Object.assign(rec,{pct:Math.floor(res.pct),win:def,lg,lw,tr,castle:res.castle});S.raidLog.unshift(rec);S.raidLog=S.raidLog.slice(0,6);return rec}
 function raidModal(rec,away){const w=rec.win;
   openModal(`<div class="mhead ${w?'win':'lose'}"><h3>${w?'قلعتك صدّتهم!':away?'تعرضت لغارة!':'الغزاة دخلوا!'}</h3></div><div class="mi">${art(w?'shield':'swords')}</div>
@@ -3010,6 +3010,24 @@ async function lbSheet(){const o=olInit();if(!o.name){olNameSheet();return}
 DTILES.splice(1,0,['lb','#xLb','trophy','المتصدرين','ترتيبك بين اللاعبين']);
 {const box=$('.side');const b=document.createElement('button');b.id='xLb';b.hidden=true;b.onclick=()=>{snd('tap');lbSheet()};box.appendChild(b)}
 setTimeout(()=>olSync(),4000);setInterval(()=>{if(!document.hidden)olSync()},45000);addEventListener('online',()=>olSync());
+
+/* ================= v1.1: server-authoritative trophies + Frankfurt server ================= */
+Object.assign(ONL,{u:'https://gqognctjoniwcvmujfzo.supabase.co/rest/v1/rpc/',k:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxb2duY3Rqb25pd2N2bXVqZnpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzA2NzEsImV4cCI6MjEwOTQ0NjY3MX0.9IgpQ0Nw1G120iXPtLIJe_oXkyD3N6icXfFttvDawz0',srv:'eu1'});
+const _olInit11=olInit;
+olInit=function(){const o=_olInit11();if(o.srv!==ONL.srv){o.srv=ONL.srv;o.sig='';o.rank=0;o.total=0;o.q=[];o.reg=false}if(!o.q)o.q=[];return o};
+function olEv(k,d,st){const o=olInit();if(!o.name||!d)return;o.q.push({k,d:d|0,s:st|0,n:uuid4()});if(o.q.length>40)o.q=o.q.slice(-40);save();olFlush()}
+let olFlushing=false;
+async function olFlush(){const o=olInit();if(olFlushing||!o.reg||!o.q.length||!navigator.onLine)return;olFlushing=true;
+  try{while(o.q.length){const e=o.q[0];let r;try{r=await rpc('nf_event',{p_id:o.id,p_secret:o.sec,p_kind:e.k,p_delta:e.d,p_stars:e.s,p_nonce:e.n})}catch(err){const m=String(err&&err.message||err);if(/no player/.test(m)){o.reg=false;o.sig='';break}if(/^4\d\d /.test(m)){o.q.shift();save();continue}break}
+      o.q.shift();if(r&&typeof r.trophies==='number'){o.tro=r.trophies;if(!o.q.length){S.tro=r.trophies;hud&&hud()}}save()}}
+  finally{olFlushing=false}}
+olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.onLine)return false;
+  if(o.reg&&o.q.length){await olFlush();if(o.q.length)return false}
+  if(!force&&o.sig===olSig())return true;ONL.busy=true;const first=!o.reg;
+  try{const base=S.b.map(b=>[b.t,b.x,b.y,b.lvl||1]);const r=await rpc('nf_sync',{p_id:o.id,p_secret:o.sec,p_name:o.name,p_trophies:S.tro|0,p_castle:cl(),p_stars:olStars(),p_league:LG[lgIdx()].n,p_base:{v:1,b:base}});
+    if(first)o.q=[];o.reg=true;o.rank=r.rank;o.total=r.total;if(typeof r.trophies==='number'&&!o.q.length){o.tro=r.trophies;S.tro=r.trophies;hud&&hud()}o.sig=olSig();ONL.err=false;save();return true}
+  catch(e){ONL.err=true;console.warn('sync',e);return false}finally{ONL.busy=false}};
+const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
