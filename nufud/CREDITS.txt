@@ -1,0 +1,12 @@
+قلاع النفود — حقوق الأصوات والموسيقى
+
+المؤثرات الصوتية: حزم Kenney "Impact Sounds" و "RPG Audio" — رخصة CC0 1.0 (ملكية عامة، تسمح بالاستخدام التجاري).
+  https://kenney.nl  (نُسخت من github.com/Boyquotes/kenney-impact-sounds-for-godot و kenney-rpg-audio-for-godot)
+
+الموسيقى: مولّدة على جهاز المطوّر بـ ACE-Step 1.5 (acestep-v15-turbo) عبر AceDeck 1.1.0، تعليمات نصية أصلية بدون تقليد أعمال موجودة.
+  ملاحظة: رخصة مشروع ACE-Step هي MIT، لكن ما فيه ضمان قانوني لكل مقطع مولّد. احتفظ بالبيانات تحت للمراجعة قبل النشر التجاري.
+  menu    : seed 2755537019 · 84 BPM · D minor
+  village : seed 3769560052 · 96 BPM · D minor
+  map     : seed 546132312  · 100 BPM · D minor
+  battle  : seed 2852003009 · 128 BPM · D minor
+  (الأصوات الأصلية WAV محفوظة في Music\AceDeck و Downloads\nufud-music)
