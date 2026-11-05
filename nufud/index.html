@@ -222,6 +222,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .ov-tm b{display:block;font-family:var(--display);font-weight:400;font-size:15px;color:#fff;text-shadow:0 2px 0 var(--edge),2px 0 0 var(--edge),-2px 0 0 var(--edge),0 -2px 0 var(--edge)}
 .ov-tm i{display:block;height:10px;margin:2px 10px 0;background:#3a1a14;border:2px solid var(--edge);border-radius:6px;overflow:hidden}
 .ov-tm u{display:block;height:100%;background:linear-gradient(180deg,#a6f05a,#46a315)}
+.ov-nm{font-family:var(--display);font-size:17px;color:#ffe07a;white-space:nowrap;transform-origin:center;text-shadow:0 2px 0 var(--edge),2px 0 0 var(--edge),-2px 0 0 var(--edge),0 -2px 0 var(--edge),0 3px 8px rgba(0,0,0,.5);margin-top:-12px;pointer-events:none}.ov-nm>span{display:inline-block;transform:translateX(-50%)}
 .ov-bub{width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;background:#fff;border:3px solid var(--edge);box-shadow:0 3px 0 var(--edge);display:grid;place-items:center;box-sizing:border-box}
 .ov-bub .art{width:28px;height:28px}
 .ov-txt{width:200px;margin:-16px 0 0 -100px;text-align:center;font-family:var(--display);font-size:24px;white-space:nowrap;text-shadow:0 2px 0 var(--edge),2px 0 0 var(--edge),-2px 0 0 var(--edge),0 -2px 0 var(--edge),0 4px 0 rgba(0,0,0,.3)}
@@ -518,7 +519,7 @@ const art=id=>ART[id]?`<svg class="art" viewBox="0 0 64 64" aria-hidden="true"><
 const paintArt=root=>root.querySelectorAll('[data-art]').forEach(el=>{el.innerHTML=art(el.dataset.art)});
 
 /* ================= DATA ================= */
-const N=22,TW=60,TH=30,MAXL=8;
+const N=22,TW=60,TH=30,MAXL=8,HOMEN='مضارب العفاسي';
 const BT={
  castle:{n:'القلعة',s:3,hp:[1500,2200,3000,4000,5200],cost:[0,1500,5000,15000,40000],res:'g',time:[0,40,120,300,600],max:1,d:'قلب قلعتك. ترقيتها تفتح مباني ومستويات جديدة.'},
  goldmine:{n:'منجم ذهب',s:2,hp:[400,500,650,800,1000],cost:[150,500,1500,4000,10000],res:'w',time:[5,25,70,180,400],rate:[0.8,1.4,2.2,3.2,4.5],cap:[300,800,1800,3500,6000],d:'يطلّع ذهب مع الوقت. اضغط عليه عشان تجمع.'},
@@ -1145,7 +1146,7 @@ function showSel(){
   if(selO&&!selB){showObs();return}
   const b=selB;if(!b){$('#sel').classList.remove('on');return}
   const d=BT[b.t],L=b.lvl,maxL=b.t==='castle'?MAXL:cl();
-  $('#selT').textContent=d.n+' · مستوى '+L;
+  $('#selT').textContent=(b.t==='castle'?HOMEN:d.n)+' · مستوى '+L;
   let sub=d.d;
   if(b.buried)sub='مدفون تحت الرمل! ما يشتغل لين تحفره أو تنقله.';
   else if(b.up)sub='يترقى... باقي '+fmtT((b.up.end-now())/1000);
@@ -1873,7 +1874,7 @@ function renderMap(){mapVillages();const st=S.camp.stars;let lastOpen=0;CAMP.for
   const h=[mapSVG(lastOpen)];
   for(let ch=1;ch<CHY.length;ch++)if(!chOpen(ch)){const [y0,y1]=CHY[ch];h.push(`<div class="wm-fog" style="top:${y0}px;height:${y1-y0}px"><span>${art('lock')}<b>${CHT[ch]}</b><small>خلّص «${esc(CAMP[ch*3-1].n)}» عشان تنفتح</small></span></div>`)}
   const nd=(id,x,y,cls,inner,lab)=>`<div class="mnode ${cls}" data-node="${id}" style="left:${x}px;top:${y}px"><div class="mn-b">${inner}</div>${lab}</div>`;
-  h.push(nd('home',HOME[0],HOME[1],'home',art('castle'),`<div class="mn-l">قلعتك · م${cl()}</div>`));
+  h.push(nd('home',HOME[0],HOME[1],'home',art('castle'),`<div class="mn-l">${HOMEN} · م${cl()}</div>`));
   CAMP.forEach((c,i)=>{const s=st[i]||0,open=i===0||(st[i-1]||0)>0;const [x,y]=CN[i];if(!chOpen(Math.floor(i/3)))return;
     h.push(nd('c'+i,x,y,'camp '+(s?'done':open?'open':'lock')+(i===11||i===17?' boss':''),i===11||i===17?art('falcon'):`<span class="mn-n">${i+1}</span>`,`<div class="mn-st">${[0,1,2].map(k=>`<span class="${k<s?'':'off'}">${art('star')}</span>`).join('')}</div><div class="mn-l">${esc(c.n)}</div>`))});
   VS.forEach(([x,y,ch],i)=>{if(!chOpen(ch))return;const v=S.map.v[i];const df=v.L-cl();const beat=v.until>now();
@@ -1897,7 +1898,7 @@ function mapLoop(){cancelAnimationFrame(mapRAF);const step=()=>{if(WM.hidden)ret
   mapRAF=requestAnimationFrame(step)};step()}
 function selectNode(id){hidePop();mapSel=id;const ne=WM.querySelector(`[data-node="${id}"]`);if(ne)ne.classList.add('sel');
   let ic='',t='',s='',btn='',act=null;
-  if(id==='home'){ic=art('castle');t='قلعتك';s=`مستوى ${cl()} · ${S.tro} كأس · دوري ${LG[lgIdx()].n}`;btn='ادخل';act=()=>closeMap()}
+  if(id==='home'){ic=art('castle');t=HOMEN;s=`مستوى ${cl()} · ${S.tro} كأس · دوري ${LG[lgIdx()].n}`;btn='ادخل';act=()=>closeMap()}
   else if(id==='car'){ic=art('caravan');t='قافلة تجّار';s='تمشي بطريق التجارة ومعها حراس. اكمنها وانهب الجمال قبل لا تطلع.';btn='اكمن';act=()=>startScout('caravan')}
   else if(id[0]==='c'){const i=+id.slice(1),c=CAMP[i],st=S.camp.stars[i]||0,open=i===0||(S.camp.stars[i-1]||0)>0;ic=`<span class="wp-n">${i+1}</span>`;t=c.n;
     s=`${CHT[Math.floor(i/3)]}<br>${art('castle')} مستوى ${c.L} · ${art('coin')}${fmt(c.g)} · ${art('drop')}${fmt(c.w)}<br><span class="wp-st">${[0,1,2].map(k=>`<span class="${k<st?'':'off'}">${art('star')}</span>`).join('')}</span>`;
@@ -2118,7 +2119,7 @@ function applyAutoRaid(rec,res){const def=res.win;let lg,lw,tr;
   Object.assign(rec,{pct:Math.floor(res.pct),win:def,lg,lw,tr,castle:res.castle});S.raidLog.unshift(rec);S.raidLog=S.raidLog.slice(0,6);return rec}
 function raidModal(rec,away){const w=rec.win;
   openModal(`<div class="mhead ${w?'win':'lose'}"><h3>${w?'قلعتك صدّتهم!':away?'تعرضت لغارة!':'الغزاة دخلوا!'}</h3></div><div class="mi">${art(w?'shield':'swords')}</div>
-    <p>${esc(rec.name)} هاجمت قلعتك${away?' وأنت غايب':''}. ${w?'دفاعاتك والفارس صدّوهم':'دمّروا '+rec.pct+'% من قلعتك'}.</p>
+    <p>${esc(rec.name)} هاجمت ${HOMEN}${away?' وأنت غايب':''}. ${w?'دفاعاتك والفارس صدّوهم':'دمّروا '+rec.pct+'% من قلعتك'}.</p>
     <div class="loot"><span>${art('coin')}<bdi>-${fmt(rec.lg)}</bdi></span><span>${art('drop')}<bdi>-${fmt(rec.lw)}</bdi></span><span>${art('trophy')}<bdi>${rec.tr>0?'+':''}${rec.tr}</bdi></span></div>
     <div class="mb"><button class="btn p" id="rpW">${art('play')} شاهد الإعادة</button><button class="btn g" id="oOk">طيب</button></div>`);
   $('#oOk').onclick=closeModal;$('#rpW').onclick=()=>{closeModal();startReplay(rec)}}
@@ -2315,6 +2316,7 @@ function lifeInit(){const c=document.createElement('canvas');c.width=c.height=12
   const bm=M('#3a2a20',{flatShading:true});for(let i=0;i<7;i++){const b=new THREE.Group();const body=BX(b,.32,.08,.1,bm,0,0,0);const wl=new THREE.Group(),wr=new THREE.Group();b.add(wl,wr);BX(wl,.12,.03,.42,bm,0,0,.22);BX(wr,.12,.03,.42,bm,0,0,-.22);b.userData={wl,wr,a:rnd(0,6.28),r:rnd(9,16),h:rnd(6,9),sp:rnd(.18,.3)*(i%2?1:-1),ph:rnd(0,6)};b.scale.setScalar(1.3);scene.add(b);BIRDS.push(b)}}
 function lifeTick(t,dt){const day=1-nightK;CLOUDS.forEach((m,i)=>{m.material.opacity=.14*day;m.position.x+=dt*.45;m.position.z+=dt*.25;if(m.position.x>cam.tx+30){m.position.x=cam.tx-30;m.position.z=cam.tz+rnd(-20,20)}if(m.position.z>cam.tz+30)m.position.z=cam.tz-30});
   BIRDS.forEach(b=>{const u=b.userData;b.visible=mode==='village'&&day>.4;if(!b.visible)return;u.a+=u.sp*dt;const cx=N/2,cz=N/2;b.position.set(cx+Math.cos(u.a)*u.r,u.h+Math.sin(t*.7+u.ph)*.5,cz+Math.sin(u.a)*u.r);b.rotation.y=-u.a-(u.sp>0?0:Math.PI);const f=Math.sin(t*10+u.ph)*.6;u.wl.rotation.x=f;u.wr.rotation.x=-f})}
+const _rvl=renderVillage;renderVillage=function(t,dt){_rvl(t,dt);const c=castle();if(c&&!c.buried){const [x,y]=proj(c.x+1.5,TOPH.castle+.15,c.y+1.5);const e=ovEl('nm');if(e._s!==HOMEN){e._s=HOMEN;e.innerHTML='<span>'+HOMEN+'</span>'}pos2(e,x,y)}};
 function gfxInit(){torches();lifeInit();buildEnv();upgradeGround();scatterDecor();WATERM.roughness=.05;WATERM.metalness=.15;WATERM.envMapIntensity=1.6;GOLDM.envMapIntensity=1.4;GOLDM.metalness=.7;GOLDM.roughness=.28;
   Object.values(MC).forEach(m=>{if(m.envMapIntensity!=null&&m!==WATERM&&m!==GOLDM)m.envMapIntensity=ENVK});setPipeline(gfxQuality()===2)}
 
