@@ -3103,7 +3103,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='f6d815fe7d0b';
+const NFBUILD='3d5b03885f15';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3913,8 +3913,8 @@ setLang=function(l){S.lang=l;save();const en=l==='en';document.documentElement.l
   const shT=$('#shT');const shFix=()=>{if(S.lang!=='en')return;const v=shT.textContent;shT.dataset.en=trStr(v)};
   new MutationObserver(shFix).observe(shT,{childList:true,characterData:true,subtree:true});
 /* toasts and confirm boxes made with alert/confirm text */
-const _cf24=window.confirm.bind(window);window.confirm=m=>_cf24(S.lang==='en'?trStr(String(m)):m);
-const _al24=window.alert.bind(window);window.alert=m=>_al24(S.lang==='en'?trStr(String(m)):m);
+if(window.confirm){const _cf24=window.confirm.bind(window);window.confirm=m=>_cf24(S.lang==='en'?trStr(String(m)):m)}
+if(window.alert){const _al24=window.alert.bind(window);window.alert=m=>_al24(S.lang==='en'?trStr(String(m)):m)}
 const st=document.createElement('style');st.textContent=`body.en{direction:ltr}body.en .sheet,body.en .modal,body.en .toast,body.en #sel,body.en .note,body.en .tip{direction:ltr;text-align:left}
   body.en .sheet .btn,body.en .modal .btn{text-align:center}
   body.en #shT{font-size:0!important}body.en #shT::after{content:attr(data-en);font-size:var(--shfs,22px)}`;document.head.appendChild(st);
