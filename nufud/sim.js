@@ -2547,7 +2547,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='caf99b73fac8';
+const NFBUILD='4933aaddd317';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3277,6 +3277,45 @@ function langSheet(){openSheet('اللغة',`<p class="note">English translates 
 {const box=$('.side');[['xBoss',()=>bossSheet()],['xMaj',()=>majlisSheet()],['xOasis',()=>oasisSheet()],['xSkin',()=>skinSheet()],['xRef',()=>refSheet()],['xLang',()=>langSheet()]].forEach(([id,fn])=>{const b=document.createElement('button');b.id=id;b.hidden=true;b.onclick=()=>{snd('tap');fn()};box.appendChild(b)})}
 DTILES.push(['boss','#xBoss','swords','غارة الوحش','الذيب الأغبر'],['maj','#xMaj','gift','المجلس','قهوة وبونص'],['oasis','#xOasis','market','الواحة','قريتك الثانية'],['skin','#xSkin','castle','المظهر','قلعة وراية ولقب'],['ref','#xRef','gift','ادعُ ربعك','جواهر لك وله'],['lang','#xLang','gear','اللغة','العربية / English']);
 setTimeout(()=>{try{if(S.lang==='en')setLang('en');refTick();oaTick()}catch(e){}},2500);setInterval(()=>{if(!document.hidden)oaTick()},60000);
+
+/* ================= v2.6: walls, trap, decor and the healer from the Canva concepts ================= */
+UNIT_KEYS.add('attar');UNIT_KEYS.add('m_attar');
+const HQD={lantern:'lantern',fountain:'fountain',raya:'raya',majlis:'majlis',dpalm:'dpalm'};
+const HQX=['wpost','wseg','trap','attar',...Object.values(HQD)];
+function hqLoad3(){if(HQ.loading3||!THREE.GLTFLoader)return;HQ.loading3=true;const L=new THREE.GLTFLoader();
+  if(THREE.DRACOLoader){const d=new THREE.DRACOLoader();d.setDecoderPath('draco/');d.setDecoderConfig({type:'wasm'});L.setDRACOLoader(d)}
+  HQX.forEach(f=>L.load('models/hq/'+f+'.glb?v=1',gl=>{
+    /* walls repeat up to a hundred times, so they get an extra cut */
+    if(f==='wpost'||f==='wseg')gl.scene.traverse(o=>{if(o.isMesh)o.geometry=lodGeo(o.geometry,.55,.05)});HQ.src['m_'+f]=hqPrep(f,gl.scene);HQ.ready['m_'+f]=1;hqRefresh(f)},undefined,e=>console.warn('hq3',f,e)))}
+/* copy the meshes of a prepared model, scaled per axis */
+function hqBody(f,sx,sy,sz){const src=HQ.src['m_'+f];const b=new THREE.Group();
+  src.children.forEach(m=>{const c=new THREE.Mesh(m.geometry,m.material);c.castShadow=true;c.receiveShadow=true;b.add(c)});b.scale.set(sx,sy==null?sx:sy,sz==null?sx:sz);return b}
+const _bf23=buildFull;
+buildFull=function(t,L,o){o=o||{};L=Math.max(1,L);const tier=tierOf(L);
+  if(t==='wall'&&HQ.ready.m_wpost&&HQ.ready.m_wseg){
+    const P=HQ.src.m_wpost.userData.size,W=HQ.src.m_wseg.userData.size;const g=new THREE.Group();
+    const ph=.5+.1*tier,pk=.5/Math.max(P.x,P.z);g.add(hqBody('wpost',pk,ph/P.y,pk));
+    /* a straight run of wall reaching the next tile; it is long along X in the model */
+    const sh=ph*.72,sl=1.02/W.x,sd=.3/W.z;
+    if(o.nb&&o.nb.x){const s=hqBody('wseg',sl,sh/W.y,sd);s.position.x=.5;g.add(s)}
+    if(o.nb&&o.nb.z){const s=hqBody('wseg',sl,sh/W.y,sd);s.rotation.y=-Math.PI/2;s.position.z=.5;g.add(s)}
+    TOPH.wall=ph;if(o.up)scaffold(g,1);if(o.buried)mound(g,1);return g}
+  if(t==='trap'&&HQ.ready.m_trap){const z=HQ.src.m_trap.userData.size;const g=new THREE.Group();g.add(hqBody('trap',.62/Math.max(z.x,z.z)));
+    if(o.revealed){const r=dyn(add(g,new THREE.RingGeometry(.46,.58,28),new THREE.MeshBasicMaterial({color:'#ff4a3a',transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false}),0,.03,0));r.rotation.x=-Math.PI/2;r.userData.ns=1;g.userData.ring=r}
+    return g}
+  const f=HQD[t];if(f&&HQ.ready['m_'+f]){const s=BT[t].s,z=HQ.src['m_'+f].userData.size;
+    /* tall, thin pieces fit by height so they do not shrink to nothing */
+    const H={lantern:1.45,raya:2.3,dpalm:2.5}[t];const k=H?Math.min(H/z.y,s*1.1/Math.max(z.x,z.z)):s*.98/Math.max(z.x,z.z);
+    const g=new THREE.Group();g.add(hqBody(f,k));TOPH[t]=z.y*k;const ud=g.userData;
+    if(t==='fountain')ud.fount=1;
+    if(o.up)scaffold(g,s);if(o.buried)mound(g,s);return g}
+  return _bf23(t,L,o)};
+const _um23=unitMesh;
+unitMesh=function(t,enemy,boxc){const root=_um23(t,enemy,boxc);if(t!=='m'||!HQ.ready.m_attar)return root;
+  const g=root.children[0];if(!g||!g.isGroup)return root;for(let i=g.children.length-1;i>=0;i--)g.remove(g.children[i]);
+  const body=hqClone('m_attar',.9,!!enemy);if(!body)return root;body.rotation.y=Math.PI/2;const rig=new THREE.Group();rig.add(body);g.add(rig);
+  const ud=root.userData;ud.legs=null;ud.arm=null;ud.cape=null;ud.hq=rig;return root};
+setTimeout(hqLoad3,1200);
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
