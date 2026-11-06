@@ -1,4 +1,4 @@
-قلاع النفود — نسخة PWA
+عرش الرمال — نسخة PWA
 
 1) ارفع محتويات هالمجلد على أي استضافة HTTPS (Netlify Drop أو GitHub Pages أو Cloudflare Pages).
 2) افتح الرابط من Safari على الآيفون.
