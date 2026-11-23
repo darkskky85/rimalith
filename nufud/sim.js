@@ -2548,7 +2548,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='87d288ee26cd';
+const NFBUILD='86de4e001daa';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3882,21 +3882,20 @@ function aoSize(){if(!UL.drt||!PST.w)return;const w=Math.max(4,PST.w>>1),h=Math.
 function fin2Init(){if(PST.fin2||!PST.fin)return;const u0=PST.fin.uniforms;
   PST.fin2=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,vertexShader:VSQ,
     uniforms:{tS:{value:null},tB:{value:null},tAO:{value:null},tD:{value:null},pInv:{value:new THREE.Matrix4()},bloom:{value:1.15},exposure:u0.exposure,vig:{value:.34},night:{value:0},t:{value:0},thr:{value:1.45},sat:{value:1.12},con:{value:1.1},
-      px:{value:new THREE.Vector2()},sharp:{value:.2},clar:{value:.3},sunP:{value:new THREE.Vector2(.5,1.2)},shaft:{value:0},aoK:{value:1},expK:{value:.88},foc:{value:40},dof:{value:.75}},
+      px:{value:new THREE.Vector2()},sharp:{value:.2},clar:{value:.3},sunP:{value:new THREE.Vector2(.5,1.2)},shaft:{value:0},aoK:{value:1},expK:{value:.88},foc:{value:40},dof:{value:0}},
     fragmentShader:`uniform sampler2D tS,tB,tAO,tD;uniform mat4 pInv;uniform float bloom,exposure,vig,night,t,thr,sat,con,sharp,clar,shaft,aoK,foc,dof,expK;uniform vec2 px,sunP;varying vec2 vUv;${VPOS}
       vec3 aces(vec3 color){float x=min(color.r,min(color.g,color.b));float off=x<.08?x-6.25*x*x:.04;color-=off;float peak=max(color.r,max(color.g,color.b));if(peak<.76)return color;float d=.24;float np=1.-d*d/(peak+d-.76);color*=np/peak;float g=1.-1./(.15*(peak-np)+1.);return mix(color,np*vec3(1.),g);}
       float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
       const vec3 LW=vec3(.2126,.7152,.0722);
       void main(){float dist=length(vp(vUv));float far=smoothstep(foc*1.2,foc*2.8,dist);
-        vec2 uv=vUv+vec2(sin(vUv.y*170.+t*5.)+sin(vUv.y*90.-t*3.1)*.6,0.)*.0011*far;
+        vec2 uv=vUv;
         vec3 c=texture2D(tS,uv).rgb;
         vec3 n=texture2D(tS,uv+vec2(px.x,0.)).rgb+texture2D(tS,uv-vec2(px.x,0.)).rgb+texture2D(tS,uv+vec2(0.,px.y)).rgb+texture2D(tS,uv-vec2(0.,px.y)).rgb;
-        c=max(c+(c*4.-n)*sharp*(1.-far),vec3(0.));
+        c=max(c+(c*4.-n)*sharp,vec3(0.));
         float ao=texture2D(tAO,vUv).r;c*=mix(1.,ao,aoK);
         vec3 b=texture2D(tB,uv).rgb;
-        float l0=dot(c,LW),lb=dot(b,LW);c*=clamp(1.+clar*(1.-far)*(l0-lb)/(lb+.08),.72,1.45);
-        c=mix(c,b,far*dof);
-        c+=max(b-vec3(thr),vec3(0.))*1.15*bloom;
+        float l0=dot(c,LW),lb=dot(b,LW);c*=clamp(1.+clar*(l0-lb)/(lb+.08),.72,1.45);
+                c+=max(b-vec3(thr),vec3(0.))*1.15*bloom;
         if(shaft>0.){vec2 dl=(sunP-vUv)/24.;vec2 q=vUv;float dec=1.;vec3 acc=vec3(0.);
           for(int i=0;i<24;i++){q+=dl;acc+=max(texture2D(tB,clamp(q,0.,1.)).rgb-vec3(thr*.8),vec3(0.))*dec;dec*=.9;}
           c+=acc*(shaft/10.)*vec3(1.,.82,.55);}
