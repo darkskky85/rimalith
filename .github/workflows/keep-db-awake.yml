@@ -1,0 +1,26 @@
+# The free Supabase plan pauses a project after a quiet week.
+# This reads the leaderboard every other day so the game's database never goes to sleep.
+# The key below is the public one the game itself ships with (read-only "anon" role).
+name: keep game database awake
+on:
+  schedule:
+    - cron: '37 6 */2 * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: read the leaderboard
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/out.json -w '%{http_code}' -X POST \
+              'https://ufcjjokojwbghvcryofj.supabase.co/rest/v1/rpc/nf_top' \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+              -d '{"p_limit":1}')
+            echo "status $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 30
+          done
+          echo "the database did not answer, it may be paused: open the Supabase dashboard and press Resume" ; exit 1
+        env:
+          KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmY2pqb2tvandiZ2h2Y3J5b2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4Njk3OTAsImV4cCI6MjEwOTQ0NTc5MH0.BAYKb5vTHdBPkgxyO1IjjAAFVWjc1fQsR2UrcRQ_jKQ
