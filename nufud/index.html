@@ -516,7 +516,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
       <button class="btn y" id="mSet">الإعدادات</button>
     </div>
     <div class="credit">برمجة وتصميم <b>المهندس فهد العفاسي</b></div>
-    <div class="ver">نسخة تجريبية 3.5.2 · رمليث</div>
+    <div class="ver">نسخة تجريبية 3.6 · رمليث</div>
   </section>
 
   <!-- VILLAGE HUD -->
@@ -2194,7 +2194,7 @@ const EVR=[10,15,30];
 const weekNo=()=>Math.floor((Date.now()/86400000+4)/7);
 const curEv=()=>EV[weekNo()%EV.length];
 const evOn=id=>curEv().id===id;
-const evProd=t=>(t==='goldmine'&&evOn('gold'))||(t==='well'&&evOn('rain'))?2:1;
+let evProd=t=>(t==='goldmine'&&evOn('gold'))||(t==='well'&&evOn('rain'))?2:1;
 const evBuild=()=>evOn('build')?.5:1;const evTrain=()=>(evOn('rain')?.5:1)*(S.buff&&S.buff.k==='train'&&S.buff.until>Date.now()?.5:1);
 function evCheck(){const w=weekNo();if(!S.ev||S.ev.w!==w)S.ev={w,base:{...S.st},got:[]}}
 const evVal=(k)=>Math.max(0,(S.st[k]||0)-(S.ev.base[k]||0));
@@ -3104,7 +3104,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='505f29f94ce0';
+const NFBUILD='8825ef910654';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3144,7 +3144,7 @@ function vfLoadSetup(st){S.army={};TROOPS.forEach(k=>S.army[k]=0);Object.assign(
 const _ss13=startScout;
 function vfBuild(t,kind,o){const R0=mkRng(t.seed);const base=kind==='car'?'caravan':'base';
   pvRand(()=>_ss13(base,Object.assign({},o||{},{L:t.L,_vf:1})),R0);const B=BB;if(!B)return null;
-  if((t.kind==='pvp'||t.kind==='friend')&&t.opp){B.name=t.opp.name;pvRand(()=>vfApplyBase(B,vfCleanBase(t.opp.base,t.L)),mkRng(t.seed^0x5bd1e995));B.pvpOpp=t.opp}
+  if((t.kind==='pvp'||t.kind==='friend'||t.kind==='war')&&t.opp){B.name=t.opp.name;pvRand(()=>vfApplyBase(B,vfCleanBase(t.opp.base,t.L)),mkRng(t.seed^0x5bd1e995));B.pvpOpp=t.opp}
   B.R=mkRng((t.seed+7)>>>0);B.tick=0;B.acc=0;B.vf={tid:t.tid,kind:t.kind,seed:t.seed,inputs:[],build:NFBUILD};return B}
 startScout=function(kind,o){o=o||{};
   if(VF_SIM||o._vf||o.camp!=null||(kind!=='base'&&kind!=='caravan')||!vfOn())return _ss13(kind,o);
@@ -4173,7 +4173,7 @@ let CL=null;
 window.realTribeSheet=async function(){if(!needOnline())return;if(!online()){toast('تحتاج تكون أونلاين');return}
   openSheet('قبيلتي','<p class="note">جاري التحميل…</p>');
   try{CL=await rpc('nf_clan_get',auth())}catch(e){$('#sheetBody').innerHTML='<p class="note">'+errMsg(e)+'</p>'+npcBtn();bindNpc();return}
-  S.ol.clan=CL.clan?CL.clan.id:null;CL.clan?clanView():noClanView()};
+  S.ol.clan=CL.clan?CL.clan.id:null;window.__CL=CL;CL.clan?clanView():noClanView()};
 const npcBtn=()=>'<button class="btn" id="npcTr" style="width:100%;margin-top:12px">🤖 القبائل الآلية (لعب فردي)</button>';
 const bindNpc=()=>{const b=$('#npcTr');if(b)b.onclick=()=>{snd('tap');trbSheet()}};
 const row=(h)=>`<div class="row" style="display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:7px">${h}</div>`;
@@ -4209,7 +4209,8 @@ function clanView(){const c=CL.clan,me=S.ol.id,lead=CL.role==='leader',elder=CL.
     <div class="row" style="display:flex;gap:10px;align-items:center;padding:12px;margin-bottom:10px"><span style="font-size:40px">${BADGE[c.badge]||'🦅'}</span>
       <div style="flex:1;min-width:0"><b style="font-size:20px">${escH(c.name)}</b><small style="display:block;opacity:.75">${CL.members.length}/30 عضو · رتبتك: ${ROLE[CL.role]}</small>${c.descr?`<small style="display:block;opacity:.65">${escH(c.descr)}</small>`:''}</div></div>
     <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn y" id="clChat" style="flex:1">💬 دردشة القبيلة</button><button class="btn g" id="clReq" style="flex:1" ${mine?'disabled':''}>🛡️ ${mine?'طلبك: '+mine.got+'/'+mine.wanted:'اطلب فزعة'}</button></div>
-    <h3 style="font-family:var(--display);font-weight:400;margin:6px 0">حرب القبائل الأسبوعية</h3>
+    <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn r" id="clWar" style="flex:1">⚔️ حرب القبائل</button><button class="btn" id="clCap" style="flex:1;background:#7a4a1c;color:#fff">🏕️ مضارب القبيلة</button></div>
+    <h3 style="font-family:var(--display);font-weight:400;margin:6px 0">ترتيب النجوم الأسبوعي</h3>
     <p class="note" style="margin:0 0 6px">كل نجمة يجيبها عضو من غزو لاعب حقيقي تنحسب للقبيلة. أول 3 قبائل ياخذ أعضاؤها جواهر. مركزكم: <b>${CL.rank||'—'}</b> من ${CL.clans} · نجومكم <b>${CL.pts||0}</b> · تنتهي بعد ${left(CL.week_end)}</p>
     <div class="row" style="display:block;padding:8px;margin-bottom:8px">${war||'<p class="note">ما فيه نجوم للحين</p>'}</div>
     ${CL.can_claim?`<button class="btn g" id="clPrize" style="width:100%;margin-bottom:10px">🏆 استلم جائزة الأسبوع الماضي (المركز ${CL.last_rank})</button>`:''}
@@ -4218,12 +4219,15 @@ function clanView(){const c=CL.clan,me=S.ol.id,lead=CL.role==='leader',elder=CL.
     <h3 style="font-family:var(--display);font-weight:400;margin:6px 0">الأعضاء</h3>
     ${CL.members.map(m=>row(`<span style="width:10px;height:10px;border-radius:50%;background:${m.online?'#3dba2c':'#bbb'};flex:0 0 auto"></span>
       <div style="flex:1;min-width:0"><b>${escH(m.name)}</b>${m.id===me?' (أنت)':''}<small style="display:block;opacity:.75">${ROLE[m.role]} · قلعة ${m.castle} · ${fmt(m.trophies)} كأس · تبرع ${m.donated} / استلم ${m.received}</small></div>
+      ${m.id!==me?`<button class="btn sm g" data-mate="${m.id}" data-n="${escH(m.name)}">⚔️ تحدي</button>`:''}
       ${m.id!==me&&lead?`<button class="btn sm y" data-act="promote" data-p="${m.id}">${m.role==='elder'?'سلّمه المشيخة':'رقّه'}</button>${m.role==='elder'?`<button class="btn sm" data-act="demote" data-p="${m.id}">نزّله</button>`:''}`:''}
       ${m.id!==me&&(lead||(elder&&m.role==='member'))?`<button class="btn sm r" data-act="kick" data-p="${m.id}">اطرد</button>`:''}`)).join('')}
     ${lead?`<button class="btn" id="clEdit" style="width:100%;margin-top:6px">⚙️ ${c.open?'اقفل':'افتح'} القبيلة</button>`:''}
     <button class="btn r" id="clLeave" style="width:100%;margin-top:8px">اطلع من القبيلة</button>${npcBtn()}`;
   paintArt($('#sheetBody'));bindNpc();
   $('#clChat').onclick=()=>{snd('tap');chatSheet('c',c.name)};
+  $('#clWar').onclick=()=>{snd('tap');window.warSheet&&warSheet()};$('#clCap').onclick=()=>{snd('tap');window.capSheet&&capSheet()};
+  $('#sheetBody').querySelectorAll('[data-mate]').forEach(b=>b.onclick=()=>{snd('tap');window.mateAttack&&mateAttack(b.dataset.mate,b.dataset.n)});
   $('#clReq').onclick=async()=>{snd('tap');try{await rpc('nf_clan_request',{...auth(),p_wanted:Math.max(4,fzCap())});toast('أرسلنا طلبك للقبيلة');realTribeSheet()}catch(e){toast(errMsg(e))}};
   const pz=$('#clPrize');if(pz)pz.onclick=async()=>{pz.disabled=true;try{const r=await rpc('nf_clan_war_claim',auth());S.gems+=r.gems;hud();save();snd('win');banner('trophy','جائزة حرب القبائل','جاتك '+r.gems+' جوهرة، قبيلتكم جات المركز '+r.rank+'.');realTribeSheet()}catch(e){toast(errMsg(e));pz.disabled=false}};
   $('#sheetBody').querySelectorAll('[data-don]').forEach(b=>b.onclick=async()=>{const k=b.dataset.k;if(!(S.army[k]>0))return;b.disabled=true;
@@ -4637,6 +4641,170 @@ camReset=function(){camFit(true)};
 const _cOn35=centerOn;centerOn=function(gx,gy,z){if(mode==='village'&&gx===10.5&&gy===10.5){camFit(false);return}_cOn35(gx,gy,z)};
 try{EN2['ممرات']='Paths'}catch(e){}
 }catch(e){console.warn('v3.5 ground',e)}
+
+/* ================= v3.6: hero relics (the same rules run in the server's battle check) ================= */
+const RELIC=[
+  {k:'banner',n:'راية العزوة',e:'🚩',d:l=>`النخوة تشمل مدى أوسع (+${(l*.6).toFixed(1)}) وتدوم ${8+1.5*l} ثانية`},
+  {k:'falcon',n:'صقر الفارس',e:'🦅',d:l=>`صقر ينقض على أقرب دفاع كل ${(4-.3*l).toFixed(1)} ثانية بضرر ${35+18*l}`},
+  {k:'cloak',n:'عباءة الرمل',e:'🧥',d:l=>`الفارس ياخذ ضرر أقل بـ 60% أول ${5+1.5*l} ثانية من نزوله`},
+  {k:'dagger',n:'خنجر الغدر',e:'🗡️',d:l=>`ضرر الفارس على الدفاعات +${10*l}%`}];
+const RELICK=RELIC.map(r=>r.k);
+if(typeof S!=='undefined'){S.relic=S.relic||{eq:null,lv:{}};S.shards=S.shards|0}
+const relicL=k=>(S.relic&&S.relic.eq===k)?Math.max(0,Math.min(5,(S.relic.lv||{})[k]|0)):0;
+const isDefB=b=>b&&!b.dead&&BT[b.t]&&BT[b.t].dmg&&b.t!=='trap'&&b.t!=='wall';
+/* setup travels with the battle so the server replays it the same way */
+const _vsn36=vfSetupNow;vfSetupNow=function(){const o=_vsn36();const k=S.relic&&S.relic.eq;o.relic=k?{k,l:(S.relic.lv||{})[k]|0}:null;return o};
+const _vcs36=vfClampSetup;vfClampSetup=function(s,cmax){const o=_vcs36(s,cmax);const r=s.relic;o.relic=(r&&RELICK.includes(r.k)&&(r.l|0)>0)?{k:r.k,l:Math.max(1,Math.min(5,o.cl,r.l|0))}:null;return o};
+const _vls36=vfLoadSetup;vfLoadSetup=function(st){_vls36(st);S.relic=st.relic?{eq:st.relic.k,lv:{[st.relic.k]:st.relic.l}}:{eq:null,lv:{}}};
+/* dagger: hero hits defences harder */
+const _ctr36=ctrM;ctrM=function(t,tg){let m=_ctr36(t,tg);if(t==='h'&&tg&&isDefB(tg)){const l=relicL('dagger');if(l)m*=1+.1*l}return m};
+/* cloak: hero is hard to hurt right after landing */
+const _du36=damageU;damageU=function(u,dmg){const B=BB;if(u&&u.t==='h'&&B&&u._dep!=null){const l=relicL('cloak');if(l&&B.clock-u._dep<5+1.5*l)dmg*=.4}return _du36(u,dmg)};
+/* banner: the rally reaches further and lasts longer */
+const _nk36=nakhwa;nakhwa=function(){const B=BB;const was=B&&B.nakhwa;const r=_nk36.apply(this,arguments);
+  if(B&&!was&&B.nakhwa){const l=relicL('banner');const h=B.units.find(u=>u.t==='h'&&!u.dead);if(l&&h)B.units.forEach(u=>{if(!u.dead&&Math.hypot(u.x-h.x,u.y-h.y)<4.5+.6*l)u.rage=Math.max(u.rage||0,B.clock+8+1.5*l)})}return r};
+/* falcon: swoops on the nearest defence; landing time for the cloak */
+const _st36=spellTick;spellTick=function(dt){_st36(dt);const B=BB;if(!B)return;
+  B.units.forEach(u=>{if(u.t==='h'&&u._dep==null)u._dep=B.clock});
+  const l=relicL('falcon');if(!l)return;const h=B.units.find(u=>u.t==='h'&&!u.dead);if(!h)return;
+  B._fk=(B._fk||0)+dt;const per=4-.3*l;if(B._fk<per)return;B._fk-=per;
+  let best=null,bd=7;B.bld.forEach(b=>{if(!isDefB(b))return;const c=bcen(b);const d=Math.hypot(c[0]-h.x,c[1]-h.y);if(d<bd){bd=d;best=b}});
+  if(best){damageB(best,35+18*l);if(!SIM){const c=bcen(best);fx.push({k:'txt',gx:c[0],gy:c[1],s:'🦅',col:'#ffffff',t:0,dur:.9})}}};
+
+/* ================= v3.6: battle feel, tribe wars, challenges, shared replays, tribe camp + raid, relics screen ================= */
+if(typeof document!=='undefined'&&typeof THREE!=='undefined')try{
+const auth=()=>({p_id:S.ol.id,p_secret:S.ol.sec});
+const onl=()=>S.ol&&S.ol.reg&&S.ol.name&&navigator.onLine;
+const errT=e=>{const m=String(e&&e.message||e);
+  if(/no attacks/.test(m))return 'خلصت هجماتك في هالحرب';if(/no war/.test(m))return 'ما فيه حرب شغالة';if(/no base/.test(m))return 'قلعته ما تحدثت للحين';
+  if(/in war/.test(m))return 'قبيلتكم في حرب الحين';if(/few/.test(m))return 'تحتاجون عضوين على الأقل';if(/rank/.test(m))return 'هذي للشيخ والنواب';
+  if(/no hits/.test(m))return 'خلصت غزواتك هالأسبوع';if(/gold/.test(m))return 'ذهبك ما يكفي';if(/no prize/.test(m))return 'ما فيه جائزة';if(/not mate/.test(m))return 'هذا مو من قبيلتك';
+  if(/slow/.test(m))return 'شوي شوي';return 'ما قدرنا نوصل للسيرفر'};
+const tLeft=ts=>{const s=Math.max(0,ts-Date.now()/1000);const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d?d+' يوم و'+h+' ساعة':h?h+' ساعة و'+m+' دقيقة':m+' دقيقة'};
+const stars=n=>'⭐'.repeat(n)+'<span style="opacity:.3">'+'⭐'.repeat(Math.max(0,3-n))+'</span>';
+const R=(h,st)=>`<div class="row" style="display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:7px;${st||''}">${h}</div>`;
+const H3=t=>`<h3 style="font-family:var(--display);font-weight:400;margin:10px 0 6px">${t}</h3>`;
+const bar=(v,c)=>`<div style="height:10px;border-radius:6px;background:rgba(0,0,0,.15);overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(0,Math.min(100,v*100))}%;background:${c||'#3dba2c'}"></div></div>`;
+Object.assign(EN2,{'حرب القبائل':'Tribe War','مضارب القبيلة':'Tribe Camp','تحدي':'Challenge','شارك بالقبيلة':'Share with tribe','آثار الفارس':'Hero relics','شظايا':'Shards','هاجم':'Attack','غزوة القبيلة':'Tribe raid','تدمير متتالي':'Combo'});
+
+/* ---------- 1) battle feel ---------- */
+const JST=document.createElement('style');JST.textContent=`
+.jpop{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.4);font-family:var(--display);color:#fff;text-shadow:0 4px 0 #6b3a10,0 0 18px rgba(255,170,40,.8);pointer-events:none;z-index:60;opacity:0;animation:jpop 1.3s ease-out forwards;white-space:nowrap}
+@keyframes jpop{12%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}22%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+.jcoin{position:fixed;width:18px;height:18px;border-radius:50%;pointer-events:none;z-index:59;transition:transform .7s cubic-bezier(.5,-.3,.7,1),opacity .7s;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.jstar{position:fixed;left:50%;top:32%;font-size:96px;transform:translate(-50%,-50%) scale(0) rotate(-40deg);pointer-events:none;z-index:61;animation:jstar 1.2s cubic-bezier(.2,1.6,.4,1) forwards;filter:drop-shadow(0 6px 0 rgba(0,0,0,.35))}
+@keyframes jstar{30%{transform:translate(-50%,-50%) scale(1.25) rotate(0)}60%{transform:translate(-50%,-50%) scale(1) rotate(0);opacity:1}100%{transform:translate(-50%,-160%) scale(.4);opacity:0}}`;
+document.head.appendChild(JST);
+const pop=(txt,size)=>{const d=document.createElement('div');d.className='jpop';d.style.fontSize=(size||40)+'px';d.textContent=txt;document.body.appendChild(d);setTimeout(()=>d.remove(),1400)};
+const SLOW={until:0,cam:null};
+const _sb36=stepBattle;stepBattle=function(dt){if(performance.now()<SLOW.until)dt*=.3;return _sb36(dt)};
+function camPunch(gx,gy){if(SLOW.cam)return;const a={tx:cam.tx,tz:cam.tz,z:cam.z};SLOW.cam=a;const b={tx:a.tx+(gx-a.tx)*.45,tz:a.tz+(gy-a.tz)*.45,z:Math.min(2.2,a.z*1.25)};const t0=performance.now();
+  const step=()=>{const k=(performance.now()-t0)/1500;if(k>=1||mode!=='battle'){if(mode==='battle'){cam.tx=a.tx;cam.tz=a.tz;cam.z=a.z;updateCamera()}SLOW.cam=null;return}
+    const e=k<.3?1-Math.pow(1-k/.3,3):k<.7?1:1-Math.pow((k-.7)/.3,2);cam.tx=a.tx+(b.tx-a.tx)*e;cam.tz=a.tz+(b.tz-a.tz)*e;cam.z=a.z+(b.z-a.z)*e;updateCamera();requestAnimationFrame(step)};step()}
+function coins(b){const box=$('#bLoot');if(!box)return;const [cx,cy]=bcen(b);const p=w2s(cx,cy);const r=box.getBoundingClientRect();const tx=r.left+r.width/2,ty=r.top+r.height/2;
+  const n=Math.min(8,3+Math.round(((b.lg||0)+(b.lw||0))/600));for(let i=0;i<n;i++){const c=document.createElement('div');c.className='jcoin';c.style.background=i%2&&b.lw?'radial-gradient(circle at 35% 30%,#bfe8ff,#2a8ad8)':'radial-gradient(circle at 35% 30%,#fff3b0,#e0a020)';
+    c.style.left=(p[0]-9+(i*37%30-15))+'px';c.style.top=(p[1]-9+(i*23%24-12))+'px';document.body.appendChild(c);
+    setTimeout(()=>{c.style.transform=`translate(${tx-p[0]}px,${ty-p[1]}px) scale(.6)`;c.style.opacity='.2'},60+i*55);setTimeout(()=>c.remove(),900+i*55)}
+  setTimeout(()=>{box.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],{duration:260})},700)}
+const _db36=damageB;damageB=function(b,dmg){const was=b&&b.dead;_db36(b,dmg);const B=BB;
+  if(SIM||!B||was||!b.dead||mode!=='battle'||(B.vf&&B.vf.sim))return;
+  if(b.t==='wall'||b.t==='trap')return;
+  if(B._lk!=null&&B.clock-B._lk<2.4)B._cb=(B._cb||1)+1;else B._cb=1;B._lk=B.clock;
+  if(B._cb>=3){pop('تدمير متتالي ×'+B._cb,30+Math.min(16,B._cb*2));snd('coin')}
+  if((b.lg||0)+(b.lw||0)>0&&B.kind!=='defense')coins(b);
+  if(b.t==='castle'){SLOW.until=performance.now()+1400;const [cx,cy]=bcen(b);camPunch(cx,cy);setTimeout(()=>pop('سقطت القلعة!',46),250)}};
+const _gt36=gfxTick;gfxTick=function(t){_gt36(t);const B=BB;if(mode!=='battle'||!B||B.kind==='defense'){if(B)B._st0=B.stars|0;return}
+  const s=B.stars|0;if(B._st0==null)B._st0=s;if(s>B._st0){B._st0=s;const d=document.createElement('div');d.className='jstar';d.textContent='⭐';document.body.appendChild(d);setTimeout(()=>d.remove(),1300);snd('win')}};
+
+/* ---------- 2) tribe-mate challenge and shared replays ---------- */
+async function onlineBattle(rpcName,args,flags,title,sub){if(!needOnline())return;closeSheet();closeModal();toast('نجهّز المعركة…');let t;
+  try{t=await rpc(rpcName,{...auth(),...args})}catch(e){toast(errT(e));return}
+  if(mode==='map')closeMap(true);BB=null;const B=vfBuild(t,'pvp',{});if(!B)return;Object.assign(B,flags);renderBattleHud();banner('swords',title,sub)}
+window.mateAttack=(id,name)=>onlineBattle('nf_ticket_mate',{p_target:id},{friendly:true,mate:true},'تحدي ودي','قلعة '+escH(name)+' · بدون كؤوس ولا غنيمة');
+window.warAttack=(id,name)=>onlineBattle('nf_ticket_war',{p_target:id},{friendly:true,war:true},'حرب القبائل','هجوم على '+escH(name)+' · كل نجمة لقبيلتك');
+/* after an online battle: share it with the tribe */
+const _eb36=endBattle;endBattle=function(){const B=BB;const r=_eb36.apply(this,arguments);
+  try{if(B&&B.vf&&B.vf.tid&&!B.vf.replay&&!B.vf.sim&&S.ol&&S.ol.clan){setTimeout(()=>{const mb=document.querySelector('#modal .mb');if(!mb||mb.querySelector('#shareRp'))return;
+      const bt=document.createElement('button');bt.className='btn y';bt.id='shareRp';bt.textContent='🎬 شارك بالقبيلة';mb.prepend(bt);
+      bt.onclick=async()=>{bt.disabled=true;const body='🎬 RP:'+B.vf.tid+' '+'⭐'.repeat(B.stars|0)+' '+Math.floor(B.pct||0)+'% '+(B.war?'حرب على ':'على ')+(B.name||'');
+        try{await rpc('nf_chat_send',{...auth(),p_room:'c',p_body:body.slice(0,190)});toast('انرسلت لدردشة القبيلة');bt.textContent='✅ انرسلت'}catch(e){toast(errT(e));bt.disabled=false}}},400)}
+    if(B&&B.war&&B.vf&&!B.vf.replay)setTimeout(()=>toast('انحسبت '+(B.stars|0)+' نجوم لقبيلتك في الحرب'),1500);
+    if(B&&B.vf&&!B.vf.replay&&!B.friendly&&(B.stars|0)===3){S.shards=(S.shards|0)+1;save();setTimeout(()=>toast('🔹 جاتك شظية لآثار الفارس'),2200)}
+    if(B&&B.raid&&!B._raidSent&&(B.dep|0)>0){B._raidSent=1;const pc=Math.floor(B.pct||0);rpc('nf_raid_hit',{...auth(),p_pct:pc}).then(j=>setTimeout(()=>toast('غزوة القبيلة: +'+pc+' · المرحلة '+(j.stage+1)),1200)).catch(e=>toast(errT(e)))}}catch(e){}
+  return r};
+const RPRE=/🎬 RP:([0-9a-f-]{36})\s*(.*)/;
+async function watchShared(id){if(!needOnline())return;toast('نحمّل الإعادة…');let it;try{it=await rpc('nf_replay_get',{...auth(),p_battle:id})}catch(e){toast(/not allowed/.test(String(e))?'هذي الإعادة لأعضاء القبيلة':'الإعادة ما عادت موجودة');return}
+  stopChat&&stopChat();vfReplay(it)}
+const _cp36=chatPull;chatPull=async function(){await _cp36.apply(this,arguments);const box=$('#chatList');if(!box)return;
+  box.querySelectorAll('span').forEach(s=>{if(s.dataset.rp)return;const m=s.textContent.match(RPRE);if(!m)return;s.dataset.rp=1;
+    s.innerHTML=`<span style="display:block">🎬 إعادة معركة ${escH(m[2]||'')}</span><button class="btn sm y" style="margin-top:6px" data-rp="${m[1]}">▶️ شاهد</button>`;
+    s.querySelector('button').onclick=()=>{snd('tap');watchShared(m[1])}})};
+
+/* ---------- 3) tribe war ---------- */
+window.warSheet=async function(){if(!needOnline())return;openSheet('حرب القبائل','<p class="note">جاري التحميل…</p>');let W;
+  try{W=await rpc('nf_war_get',auth())}catch(e){$('#sheetBody').innerHTML='<p class="note">'+errT(e)+'</p>';return}
+  const CL=window.__CL||{};const lead=CL.role==='leader'||CL.role==='elder';const B=$('#sheetBody');
+  if(!W.war){B.innerHTML=`<p class="note">قبيلتكم ضد قبيلة ثانية بنفس حجمكم تقريباً، لمدة 48 ساعة. كل عضو له هجمتين على قواعد الخصم، وتنحسب أفضل نجوم على كل قاعدة. اللي يجمع نجوم أكثر يفوز، وكل عضو هاجم ياخذ جواهر وشظايا.</p>
+      ${W.queued?`<p class="note" style="font-weight:800">⏳ ندوّر لكم خصم… أول ما تدخل قبيلة ثانية تبدأ الحرب.</p>${lead?'<button class="btn" id="wCancel" style="width:100%">إلغاء البحث</button>':''}`
+        :lead?'<button class="btn g" id="wStart" style="width:100%">⚔️ ابحث عن خصم</button>':'<p class="note">الشيخ أو النواب يبدون الحرب.</p>'}`;
+    const s=$('#wStart');if(s)s.onclick=async()=>{s.disabled=true;try{const r=await rpc('nf_war_start',auth());snd('win');toast(r.queued?'دخلتوا قائمة الانتظار':'بدأت الحرب!');warSheet()}catch(e){toast(errT(e));s.disabled=false}};
+    const c=$('#wCancel');if(c)c.onclick=async()=>{try{await rpc('nf_war_cancel',auth());warSheet()}catch(e){toast(errT(e))}};return}
+  const w=W.war;const us=w.us,th=w.them;
+  const head=`<div class="row" style="display:flex;align-items:center;justify-content:space-around;padding:12px;margin-bottom:8px;text-align:center">
+      <div><div style="font-size:30px">${(BADGES[us.badge]||'🦅')}</div><b>${escH(us.name)}</b><div style="font:400 28px var(--display)">${us.stars}⭐</div><small>${us.pct}%</small></div>
+      <div style="font:400 22px var(--display)">ضد</div>
+      <div><div style="font-size:30px">${(BADGES[th.badge]||'🦅')}</div><b>${escH(th.name)}</b><div style="font:400 28px var(--display)">${th.stars}⭐</div><small>${th.pct}%</small></div></div>`;
+  const res=w.done?`<p class="note" style="font-weight:800;font-size:17px;text-align:center">${w.won===1?'🏆 فزتوا بالحرب!':w.won===0?'🤝 تعادل':'خسرتوا هالمرة'}</p>${w.can_claim?'<button class="btn g" id="wClaim" style="width:100%;margin-bottom:8px">🎁 استلم جائزتك</button>':''}${lead?'<button class="btn y" id="wAgain" style="width:100%;margin-bottom:8px">⚔️ حرب جديدة</button>':''}`
+    :`<p class="note" style="text-align:center">تنتهي بعد <b>${tLeft(w.ends)}</b> · ${w.in?'باقي لك <b>'+w.left+'</b> هجمات':'ما كنت بالقبيلة لما بدت الحرب'}</p>`;
+  B.innerHTML=head+res+H3('قواعد الخصم')+w.theirs.map(m=>R(`<div style="flex:1;min-width:0"><b>${escH(m.name)}</b><small style="display:block;opacity:.75">قلعة ${m.castle} · ${fmt(m.trophies)} كأس</small><div>${stars(m.best_st)} <small>${m.best_pct}%</small></div></div>
+      ${!w.done&&w.in&&w.left>0?`<button class="btn g sm" data-wa="${m.id}" data-n="${escH(m.name)}">⚔️ هاجم</button>`:''}`)).join('')
+    +H3('قبيلتنا')+w.ours.map(m=>R(`<div style="flex:1;min-width:0"><b>${escH(m.name)}</b><small style="display:block;opacity:.75">هجمات ${m.used}/2 · قلعة ${m.castle}</small></div><div>${stars(m.best_st)}</div>`)).join('');
+  B.querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>{snd('tap');warAttack(b.dataset.wa,b.dataset.n)});
+  const cl=$('#wClaim');if(cl)cl.onclick=async()=>{cl.disabled=true;try{const r=await rpc('nf_war_claim',auth());S.gems+=r.gems;S.shards=(S.shards|0)+r.shards;hud();save();snd('win');banner('trophy','جائزة الحرب','جاتك '+r.gems+' جوهرة و '+r.shards+' شظية');warSheet()}catch(e){toast(errT(e));cl.disabled=false}};
+  const ag=$('#wAgain');if(ag)ag.onclick=async()=>{ag.disabled=true;try{const r=await rpc('nf_war_start',auth());toast(r.queued?'دخلتوا قائمة الانتظار':'بدأت الحرب!');warSheet()}catch(e){toast(errT(e));ag.disabled=false}}};
+const BADGES={falcon:'🦅',sword:'⚔️',palm:'🌴',camel:'🐪',moon:'🌙',star:'⭐',tent:'⛺',horse:'🐎'};
+
+/* ---------- 4) tribe camp + weekly raid ---------- */
+const CAPB=[{k:'majlis',n:'مجلس الشيخ',e:'🏛️',p:l=>`+${2*l} مكان في طلب الفزعة`},{k:'souq',n:'سوق القبيلة',e:'🏪',p:l=>`+${3*l}% إنتاج الذهب لكل الأعضاء`},
+  {k:'well',n:'بئر القبيلة',e:'⛲',p:l=>`+${3*l}% إنتاج الماء لكل الأعضاء`},{k:'tower',n:'برج المراقبة',e:'🗼',p:l=>`+${5*l}% جواهر جائزة الحرب`},{k:'forge',n:'دار الحدادة',e:'⚒️',p:l=>`+${l} شظية بجائزة الغزوة`}];
+const CAPX=[0,200,600,1500,3500,8000];
+S.capPk=S.capPk||{};
+const _evp36=evProd;evProd=function(t){const m=_evp36(t);const pk=S.capPk||{};if(t==='goldmine')return m*(1+.03*(pk.souq|0));if(t==='well')return m*(1+.03*(pk.well|0));return m};
+const FORTS=['الرمال','الحرّة','الدهناء','النفود','طويق','العارض','السراة','الشبيكة'];
+window.capSheet=async function(){if(!needOnline())return;openSheet('مضارب القبيلة','<p class="note">جاري التحميل…</p>');let C;
+  try{C=await rpc('nf_cap_get',auth())}catch(e){$('#sheetBody').innerHTML='<p class="note">'+errT(e)+'</p>';return}
+  if(C.clan===null){$('#sheetBody').innerHTML='<p class="note">انضم لقبيلة أول.</p>';return}
+  const cap=C.cap||{};S.capPk={};CAPB.forEach(b=>S.capPk[b.k]=(cap[b.k]||{}).lvl|0);save();
+  const rd=C.raid;const stage=Math.floor(rd.prog/300),inSt=(rd.prog%300)/300;const B=$('#sheetBody');
+  B.innerHTML=`<p class="note">مضارب يبنيها كل أعضاء القبيلة بذهبهم، وكل مستوى يعطي الكل ميزة. وكل أسبوع فيه غزوة على حصن مشترك: كل عضو له 3 غزوات، وكل ما تقدمتوا مراحل كبرت الجائزة.</p>
+    ${C.last?`<button class="btn g" id="rClaim" style="width:100%;margin-bottom:8px">🎁 جائزة غزوة الأسبوع الماضي (${C.last.stages} مراحل)</button>`:''}
+    ${H3('غزوة القبيلة')}${R(`<div style="flex:1;min-width:0"><b>حصن ${FORTS[stage%8]} · المرحلة ${stage+1}</b><small style="display:block;opacity:.75">تنتهي بعد ${tLeft(rd.ends)} · غزواتك ${rd.hits}/3 · ضررك ${rd.dmg}%</small>${bar(inSt,'#e0532f')}</div>
+      <button class="btn r sm" id="rGo" ${rd.hits>=3?'disabled':''}>⚔️ اغزُ</button>`)}
+    ${rd.top.length?'<div class="row" style="display:block;padding:8px;margin-bottom:8px">'+rd.top.map((t,i)=>`<div style="display:flex;justify-content:space-between;padding:2px 6px"><span>${i+1}. ${escH(t.name)}</span><b>${t.dmg}%</b></div>`).join('')+'</div>':''}
+    ${H3('المضارب')}${CAPB.map(b=>{const x=(cap[b.k]||{}).xp|0,l=(cap[b.k]||{}).lvl|0;const nx=CAPX[Math.min(5,l+1)],px=CAPX[l];
+      return R(`<span style="font-size:28px">${b.e}</span><div style="flex:1;min-width:0"><b>${b.n} · مستوى ${l}</b><small style="display:block;opacity:.75">${l?b.p(l):'لسا ما انبنى'}${l<5?' · التالي: '+b.p(l+1):''}</small>${l<5?bar((x-px)/(nx-px)):''}</div>
+        ${l<5?`<div style="display:flex;flex-direction:column;gap:4px"><button class="btn sm g" data-cg="${b.k}" data-a="2000">${art('coin')}2K</button><button class="btn sm g" data-cg="${b.k}" data-a="10000">${art('coin')}10K</button></div>`:'<b>🏁</b>'}`)}).join('')}
+    <p class="note">ساهمت بـ ${fmt(C.given)} ذهب</p>`;
+  paintArt(B);
+  B.querySelectorAll('[data-cg]').forEach(b=>b.onclick=async()=>{const a=+b.dataset.a;if(S.gold<a){toast('ذهبك ما يكفي');snd('bad');return}b.disabled=true;
+    try{const r=await rpc('nf_cap_give',{...auth(),p_b:b.dataset.cg,p_gold:a});S.gold-=r.gold;hud();save();snd('coin');toast('تبرعت بـ '+fmt(r.gold)+' ذهب');capSheet()}catch(e){toast(errT(e));b.disabled=false}});
+  const go=$('#rGo');if(go)go.onclick=()=>{if(!TROOPS.some(k=>S.army[k]>0)){toast('درّب جيش أول');return}closeSheet();const L=Math.min(8,2+stage);
+    startScout('base',{L,name:'حصن '+FORTS[stage%8],g:L*700,w:L*700});if(BB){BB.raid=true;banner('swords','غزوة القبيلة','حصن '+FORTS[stage%8]+' · كل % تدمير ينحسب للقبيلة')}};
+  const rc=$('#rClaim');if(rc)rc.onclick=async()=>{rc.disabled=true;try{const r=await rpc('nf_raid_claim',auth());S.gems+=r.gems;S.shards=(S.shards|0)+r.shards;hud();save();snd('win');banner('trophy','جائزة الغزوة','جاتك '+r.gems+' جوهرة و '+r.shards+' شظية');capSheet()}catch(e){toast(errT(e));rc.disabled=false}}};
+/* keep the camp bonuses fresh */
+setTimeout(async()=>{if(!onl())return;try{const C=await rpc('nf_cap_get',auth());if(C&&C.cap){S.capPk={};CAPB.forEach(b=>S.capPk[b.k]=(C.cap[b.k]||{}).lvl|0);save()}}catch(e){}},20000);
+
+/* ---------- 5) hero relics screen ---------- */
+const rCost=l=>l?8*(l+1):10;
+const _hs36=heroSheet;heroSheet=function(){_hs36.apply(this,arguments);const B=$('#sheetBody');if(!B)return;const R0=S.relic;const mx=Math.min(5,cl());
+  B.insertAdjacentHTML('beforeend',H3('آثار الفارس')+`<p class="note" style="margin:0 0 6px">قطع نادرة تعطي الفارس قدرة خاصة. تلبس وحدة بس. عندك <b>🔹 ${S.shards|0} شظية</b>، تجيها من حرب القبائل وغزوة القبيلة وكل هجوم أونلاين بثلاث نجوم.</p>`
+    +RELIC.map(r=>{const l=R0.lv[r.k]|0,on=R0.eq===r.k,c=rCost(l);
+      return R(`<span style="font-size:28px">${r.e}</span><div style="flex:1;min-width:0"><b>${r.n}${l?' · مستوى '+l:''}</b><small style="display:block;opacity:.75">${r.d(Math.max(1,l))}</small></div>
+        <div style="display:flex;flex-direction:column;gap:4px">${l?`<button class="btn sm ${on?'y':''}" data-req="${r.k}">${on?'لابسها':'البس'}</button>`:''}
+        ${l<mx?`<button class="btn sm g" data-rup="${r.k}" ${(S.shards|0)<c?'disabled':''}>${l?'طوّر':'افتح'} 🔹${c}</button>`:l?'<small>الحد '+mx+'</small>':''}</div>`,on?'background:#fff4cf':'')}).join(''));
+  B.querySelectorAll('[data-rup]').forEach(b=>b.onclick=()=>{const k=b.dataset.rup,l=R0.lv[k]|0,c=rCost(l);if((S.shards|0)<c||l>=mx)return;S.shards-=c;R0.lv[k]=l+1;if(!R0.eq)R0.eq=k;snd('win');save();heroSheet()});
+  B.querySelectorAll('[data-req]').forEach(b=>b.onclick=()=>{const k=b.dataset.req;R0.eq=R0.eq===k?null:k;snd('tap');save();heroSheet()})};
+}catch(e){console.warn('v3.6 ui',e)}
 
 /* buttons */
 $('#bShop').onclick=()=>{snd('tap');selB=null;selO=null;showSel();shopSheet()};
