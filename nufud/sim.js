@@ -2548,7 +2548,7 @@ olSync=async function(force){const o=olInit();if(!o.name||ONL.busy||!navigator.o
 const _lbRow11=lbRow;lbRow=function(p,me){return _lbRow11(Object.assign({},p,{league:LG[lgIdx(p.trophies)].n}),me)};
 
 /* ================= v1.2: verified battles (server replays every attack) + PvP on real players ================= */
-const NFBUILD='86de4e001daa';
+const NFBUILD='505f29f94ce0';
 let VF_SIM=false;
 const __RR=Math.random;
 /* visual-only helpers always use the real RNG, so the battle RNG stream is identical on the client and on the server */
@@ -3956,7 +3956,11 @@ const st=document.createElement('style');st.textContent=`
 :root{--uz:.8}
 @media (orientation:landscape) and (max-height:560px){:root{--uz:.68}}
 @media (orientation:landscape) and (min-height:561px) and (max-height:820px){:root{--uz:.78}}
-.hud>.res,.hud>.side,.bottom>.bigbtn,#bhud .btop,#bhud .troops,#bhud .endbtn,#bhud .scoutbar,.raid,#placebar{zoom:var(--uz)}
+.hud>.res,.hud>.side,.bottom>.bigbtn,#bhud .troops,#bhud .endbtn,#bhud .scoutbar,.raid,#placebar{zoom:var(--uz)}
+/* the battle top bar is scaled with real font sizes: zoomed text renders blurry on iPhone */
+#bhud .timer{font-size:calc(30px*var(--uz))}#bhud .pct{font-size:calc(15px*var(--uz))}#bhud .stars .art{width:calc(26px*var(--uz));height:calc(26px*var(--uz))}
+#bhud .bcard{font-size:calc(13px*var(--uz));padding:calc(4px*var(--uz)) calc(10px*var(--uz)) calc(6px*var(--uz));border-radius:calc(12px*var(--uz))}#bhud .bcard b{font-size:calc(17px*var(--uz))}#bhud .bcard .art{width:calc(20px*var(--uz));height:calc(20px*var(--uz))}
+#bhud .timer,#bhud .bcard,#bhud .pct{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 @media (orientation:landscape){
   .hud,.bottom{padding-left:max(10px,env(safe-area-inset-left,0px))!important;padding-right:max(10px,env(safe-area-inset-right,0px))!important}
   #sel{width:min(420px,calc(100% - 210px))}
